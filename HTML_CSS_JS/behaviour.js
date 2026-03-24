@@ -33,6 +33,21 @@ function toggleEraserMode() {
     }
 }
 
+function redraw()
+{
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < allPaths.length; i++) {
+        ctx.strokeStyle = colourPicker.value;
+        ctx.lineWidth = allPaths[i][1]
+        ctx.strokeStyle = allPaths[i][2]
+        ctx.globalAlpha = allPaths[i][3]
+        ctx.stroke(allPaths[i][0]);
+    }
+    ctx.lineWidth = sizeSlider.value;
+    ctx.globalAlpha = opacitySlider.value;
+    ctx.strokeStyle = colourPicker.value;
+}
+
 function updateBrushSize(event) {
     ctx.lineWidth = event.target.value;
 }
@@ -40,6 +55,10 @@ function updateBrushSize(event) {
 function updateColour(event) {
     console.log(event.target.value);
     ctx.strokeStyle = event.target.value;
+}
+
+function updateOpacity(event) {
+    ctx.globalAlpha = event.target.value;
 }
 
 /* INPUT CHECKS */
@@ -59,6 +78,8 @@ function keyDown(event) {
     }
     if (event.key === "p") {
         console.log(allPaths)
+        console.log(ctx.globalAlpha);
+        console.log(opacitySlider.value);
     }
     if (pressedKeys["Control"] === true && pressedKeys["z"] === true) {
         undo();
@@ -89,10 +110,12 @@ function updateCurrentPath() {
         return;
     }
     currentPath.lineTo(mousePos[0], mousePos[1]);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    redraw();
     draw();
 }
 function endPath() {
-    allPaths.push([currentPath, ctx.lineWidth, ctx.strokeStyle]);
+    allPaths.push([currentPath, ctx.lineWidth, ctx.strokeStyle, ctx.globalAlpha]);
     penDown = false
 }
 
@@ -102,16 +125,8 @@ function draw() {
 
 
 function undo() {
-    allPaths.pop()
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < allPaths.length; i++) {
-        ctx.strokeStyle = colourPicker.value;
-        ctx.lineWidth = allPaths[i][1]
-        ctx.strokeStyle = allPaths[i][2]
-        ctx.stroke(allPaths[i][0]);
-    }
-    ctx.lineWidth = sizeSlider.value;
-    ctx.strokeStyle = colourPicker.value;
+    allPaths.pop();
+    redraw();
 }
 
 function update() {
@@ -131,5 +146,8 @@ document.addEventListener('mouseup', mouseUp);
 const sizeSlider = document.getElementById("sizeSlider");
 sizeSlider.addEventListener("input", updateBrushSize);
 
+const opacitySlider = document.getElementById("opacitySlider");
+opacitySlider.addEventListener("input", updateOpacity);
+
 const colourPicker = document.getElementById("colourSelect");
-colourPicker.addEventListener("input", updateColour);   
+colourPicker.addEventListener("input", updateColour);
