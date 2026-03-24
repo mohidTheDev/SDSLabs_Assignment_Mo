@@ -104,32 +104,67 @@ function loadState() {
     }
 }
 
+function insertImage() {
+    const url = prompt("Enter the image URL:");
+    if (url) {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; 
+        img.onload = function() {
+            const x = 0
+            const y = 0
+            const width = img.width / 2;
+            const height = img.height / 2;
+
+            allPaths.push({
+                type: 'image',
+                data: img,
+                x: x,
+                y: y,
+                w: width,
+                h: height,
+                alpha: ctx.globalAlpha,
+                composite: ctx.globalCompositeOperation
+            });
+
+            redraw();
+            saveState();
+        };
+        img.onerror = () => alert("Failed to load image. Check the URL.");
+        img.src = url;
+    }
+}
+
 function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    
     if (savedCanvasImage !== null) {
-        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalCompositeOperation = 'source-over'; 
         ctx.globalAlpha = 1.0;
         ctx.drawImage(savedCanvasImage, 0, 0);
-    }
-
+    }    
+    
     for (let i = 0; i < allPaths.length; i++) {
-        ctx.strokeStyle = colourPicker.value;
-        ctx.lineWidth = allPaths[i].lineWidth
-        ctx.strokeStyle = allPaths[i].strokeStyle
-        ctx.globalAlpha = allPaths[i].alpha
-        ctx.globalCompositeOperation = allPaths[i].composite
-        ctx.stroke(allPaths[i].path);
+        const item = allPaths[i];
+
+        if (item.type === 'image') {
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
+            ctx.drawImage(item.data, item.x, item.y, item.w, item.h);
+        } 
+        else {
+            const isArray = Array.isArray(item);
+            ctx.lineWidth = isArray ? item[1] : item.lineWidth;
+            ctx.strokeStyle = isArray ? item[2] : item.strokeStyle;
+            ctx.globalAlpha = isArray ? item[3] : item.alpha;
+            ctx.globalCompositeOperation = isArray ? item[4] : item.composite;
+            ctx.stroke(isArray ? item[0] : item.path);
+        }
     }
+    
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
     ctx.strokeStyle = colourPicker.value;
-    if (eraserMode) {
-        ctx.globalCompositeOperation = 'destination-out';
-    }
-    else {
-        ctx.globalCompositeOperation = 'source-over';
-    }
+    ctx.globalCompositeOperation = eraserMode ? 'destination-out' : 'source-over';
 }
 
 function updateBrushSize(event) {
@@ -313,5 +348,8 @@ eraserButton.addEventListener("click", toggleEraserMode);
 
 const modeButton = document.getElementById("modeButton");
 modeButton.addEventListener("click", toggleMode);
+
+const imageButton = document.getElementById("imageButton");
+imageButton.addEventListener("click", insertImage);
 
 loadState();
