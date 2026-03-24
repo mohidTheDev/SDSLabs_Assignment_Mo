@@ -14,7 +14,9 @@ let pressedKeys = {}
 //0: pen 1: brush
 let brushType = 0;
 let savedCanvasImage = null;
-let selectMode = false
+let selectMode = false;
+let textBoxMode = false;
+let imageMode = false;
 
 function toggleEraserMode() {
     eraserMode = !eraserMode;
@@ -28,27 +30,65 @@ function toggleEraserMode() {
     saveState();
 }
 
-function toggleSelectMode()
-{
+function toggleSelectMode() {
     selectMode = !selectMode;
-    selectButton.classList.toggle("toggled");
-    if (!selectMode)
-    {
-        if(brushType === 0){
+    clearToggles();
+    clearSpecialToggles();
+    if (!selectMode) {
+        if (brushType === 0) {
             penButtonPressed();
         }
-        else
-        {
+        else {
             brushButtonPressed();
         }
         return
     }
 
-    if(eraserMode)
-    {
+    if (eraserMode) {
         toggleEraserMode();
     }
+    selectButton.classList.toggle("toggled");
+}
+
+function toggleTextBoxMode() {
+    textBoxMode = !textBoxMode
     clearToggles();
+    clearSpecialToggles();
+    if (!textBoxMode) {
+        if (brushType === 0) {
+            penButtonPressed();
+        }
+        else {
+            brushButtonPressed();
+        }
+        return
+    }
+
+    if (eraserMode) {
+        toggleEraserMode();
+    }
+    textButton.classList.toggle("toggled");
+
+}
+
+function toggleImageMode() {
+    imageMode = !imageMode
+    clearToggles();
+    clearSpecialToggles();
+    if (!imageMode) {
+        if (brushType === 0) {
+            penButtonPressed();
+        }
+        else {
+            brushButtonPressed();
+        }
+        return
+    }
+
+    if (eraserMode) {
+        toggleEraserMode();
+    }
+    imageButton.classList.toggle("toggled");
 }
 
 function toggleMode() {
@@ -128,16 +168,16 @@ function loadState() {
     }
 }
 
-function insertImage() {
+function insertImage(mouseX, mouseY) {
     const url = prompt("Enter the image URL:");
     if (url) {
         const img = new Image();
-        img.crossOrigin = "anonymous"; 
-        img.onload = function() {
-            const x = 0
-            const y = 0
+        img.crossOrigin = "anonymous";
+        img.onload = function () {
             const width = img.width / 2;
             const height = img.height / 2;
+            const x = mouseX - width / 2;
+            const y = mouseY - height / 2;
 
             allPaths.push({
                 type: 'image',
@@ -158,13 +198,13 @@ function insertImage() {
     }
 }
 
-function insertText() {
+function insertText(mouseX, mouseY) {
     const text = prompt("Enter your text:");
     if (text) {
-        const x = canvas.width / 4;
-        const y = canvas.height / 2;
-        
-        const fontSize = Math.max(12, sizeSlider.value * 2); 
+        const x = mousePos[0];
+        const y = mousePos[1];
+
+        const fontSize = Math.max(12, sizeSlider.value * 2);
 
         allPaths.push({
             type: 'text',
@@ -174,7 +214,7 @@ function insertText() {
             size: fontSize,
             color: colourPicker.value,
             alpha: opacitySlider.value,
-            composite: 'source-over' 
+            composite: 'source-over'
         });
 
         redraw();
@@ -184,13 +224,13 @@ function insertText() {
 
 function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     if (savedCanvasImage !== null) {
-        ctx.globalCompositeOperation = 'source-over'; 
+        ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
         ctx.drawImage(savedCanvasImage, 0, 0);
-    }    
-    
+    }
+
     for (let i = 0; i < allPaths.length; i++) {
         const item = allPaths[i];
 
@@ -198,7 +238,7 @@ function redraw() {
             ctx.globalAlpha = item.alpha;
             ctx.globalCompositeOperation = item.composite;
             ctx.drawImage(item.data, item.x, item.y, item.w, item.h);
-        } 
+        }
         else if (item.type === 'text') {
             ctx.globalAlpha = item.alpha;
             ctx.globalCompositeOperation = item.composite;
@@ -216,16 +256,14 @@ function redraw() {
             ctx.stroke(isArray ? item[0] : item.path);
         }
     }
-    
+
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
     ctx.strokeStyle = colourPicker.value;
-    if (eraserMode)
-    {
+    if (eraserMode) {
         ctx.globalCompositeOperation = 'destination-out'
     }
-    else
-    {
+    else {
         ctx.globalCompositeOperation = 'source-over'
     }
 }
@@ -261,6 +299,12 @@ function clearToggles() {
     penButton.classList.remove("toggled");
     brushButton.classList.remove("toggled");
 }
+
+function clearSpecialToggles() {
+    selectButton.classList.remove("toggled");
+    textButton.classList.remove("toggled");
+    imageButton.classList.remove("toggled");
+}
 function penButtonPressed() {
     brushType = 0;
     clearToggles();
@@ -294,7 +338,20 @@ function keyUp(event) {
 }
 
 function mouseDown(event) {
-    if (!selectMode) {
+    if (imageMode)
+    {
+        insertImage(mousePos[0], mousePos[1]);
+        toggleImageMode();
+        return;
+    }
+    if (textBoxMode)
+    {
+        insertText(mousePos[0], mousePos[1]);
+        toggleTextBoxMode();
+        return;
+    }
+    if (!selectMode) 
+    {
         startPath();
         return;
     }
@@ -305,17 +362,17 @@ function mouseDown(event) {
 
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
-        
+
         if (item.type === 'text') {
             ctx.font = `${item.size}px Arial`;
             const textWidth = ctx.measureText(item.text).width;
-            const textHeight = item.size; 
+            const textHeight = item.size;
 
             if (clickX >= item.x && clickX <= item.x + textWidth &&
                 clickY >= item.y && clickY <= item.y + textHeight) {
-                
+
                 const newText = prompt("Edit text:", item.text);
-                
+
                 if (newText !== null && newText !== "") {
                     item.text = newText;
                     redraw();
@@ -447,10 +504,10 @@ const modeButton = document.getElementById("modeButton");
 modeButton.addEventListener("click", toggleMode);
 
 const imageButton = document.getElementById("imageButton");
-imageButton.addEventListener("click", insertImage);
+imageButton.addEventListener("click", toggleImageMode);
 
 const textButton = document.getElementById("textButton");
-textButton.addEventListener("click", insertText);
+textButton.addEventListener("click", toggleTextBoxMode);
 
 const selectButton = document.getElementById("selectButton");
 selectButton.addEventListener("click", toggleSelectMode);
