@@ -1,5 +1,8 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
+ctx.lineCap = "round";
+ctx.lineJoin = "round";
 /*
 brush class
 -image for shape
@@ -20,24 +23,28 @@ let currentPath
 let mousePos = []
 let pressedKeys = {}
 
-function toggleEraserMode()
-{
-    /*check functionality*/
+function toggleEraserMode() {
     erarserMode = !erarserMode
-    if (erarserMode)
-    {
+    if (erarserMode) {
         ctx.globalCompositeOperation = 'destination-out';
     }
-    else
-    {
+    else {
         ctx.globalCompositeOperation = 'source-over';
     }
 }
 
+function updateBrushSize(event) {
+    ctx.lineWidth = event.target.value;
+}
+
+function updateColour(event) {
+    console.log(event.target.value);
+    ctx.strokeStyle = event.target.value;
+}
+
 /* INPUT CHECKS */
 
-function setMousePos(event)
-{
+function setMousePos(event) {
     const canvasRect = canvas.getBoundingClientRect();
     mouseX = event.clientX - canvasRect.left;
     mouseY = event.clientY - canvasRect.top;
@@ -45,77 +52,69 @@ function setMousePos(event)
     update();
 }
 
-function keyDown(event)
-{
+function keyDown(event) {
     pressedKeys[event.key] = true
-    if (event.key === "e")
-    {
+    if (event.key === "e") {
         toggleEraserMode();
     }
-    if (event.key === "p")
-    {
+    if (event.key === "p") {
         console.log(allPaths)
     }
-    if (pressedKeys["Control"] === true && pressedKeys["z"] === true)
-    {
+    if (pressedKeys["Control"] === true && pressedKeys["z"] === true) {
         undo();
     }
 }
-function keyUp(event)
-{
+function keyUp(event) {
     pressedKeys[event.key] = false
 }
 
-function mouseDown(event)
-{
+function mouseDown(event) {
     /* check if mouse is in canvas*/
     startPath()
 }
 
-function mouseUp(event)
-{
-    /* check if mouse is in canvas*/
+function mouseUp(event) {
     endPath()
 }
 
-function startPath()
-{
+function startPath() {
+
     currentPath = new Path2D();
     currentPath.moveTo(mousePos[0], mousePos[1]);
     penDown = true
 }
-function updateCurrentPath()
-{
-    if (!penDown)
-    {
+
+function updateCurrentPath() {
+    if (!penDown) {
         return;
     }
     currentPath.lineTo(mousePos[0], mousePos[1]);
     draw();
 }
-function endPath()
-{
-    allPaths.push(currentPath);
+function endPath() {
+    allPaths.push([currentPath, ctx.lineWidth, ctx.strokeStyle]);
     penDown = false
 }
 
-function draw()
-{
+function draw() {
     ctx.stroke(currentPath);
 }
 
-function undo()
-{
+
+function undo() {
     allPaths.pop()
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < allPaths.length; i++) 
-    {
-        ctx.stroke(allPaths[i]);
+    for (let i = 0; i < allPaths.length; i++) {
+        ctx.strokeStyle = colourPicker.value;
+        ctx.lineWidth = allPaths[i][1]
+        ctx.strokeStyle = allPaths[i][2]
+        ctx.stroke(allPaths[i][0]);
     }
+    ctx.lineWidth = sizeSlider.value;
+    ctx.strokeStyle = colourPicker.value;
 }
 
-function update()
-{
+function update() {
     updateCurrentPath();
 }
 
@@ -128,3 +127,9 @@ window.addEventListener('mousemove', setMousePos);
 document.addEventListener('mousedown', mouseDown);
 
 document.addEventListener('mouseup', mouseUp);
+
+const sizeSlider = document.getElementById("sizeSlider");
+sizeSlider.addEventListener("input", updateBrushSize);
+
+const colourPicker = document.getElementById("colourSelect");
+colourPicker.addEventListener("input", updateColour);   

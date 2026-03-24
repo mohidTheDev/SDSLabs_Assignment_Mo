@@ -1,13 +1,127 @@
-body
-{
+body {
     background-color: beige;
 }
-#canvas
-{
+
+#canvas {
     background-color: white;
     border-style: solid;
     border-width: 5px;
     border-color: black;
     /*Add scaling of canvas*/
+    background: white;
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+* {
     image-rendering: pixelated;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #f7f7f7;
+    padding: 20px;
+}
+
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    border: 1px solid black;
+    padding: 10px;
+    background-color: #fff;
+}
+
+.topControls {
+    display: flex;
+    width: 100%;
+    align-items: center;
+}
+
+.control {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.topLeft {
+    justify-content: flex-start;
+}
+
+.topCenter {
+    justify-content: center;
+    gap: 20px;
+}
+
+.topRight {
+    justify-content: flex-end;
+}
+
+input[type="color"].color-picker {
+    width: 44px;
+    height: 44px;
+    border: 1px solid black;
+    cursor: pointer;
+    background: none;
+}
+
+input[type="range"].opacity-range {
+    width: 100px;
+    cursor: pointer;
+}
+
+.canvasArea {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.bottomControls {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.bottomRight {
+    display: flex;
+    gap: 10px;
+}
+
+.iconButton {
+    width: 44px;
+    height: 44px;
+    background-color: white;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.iconButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; 
+  display: block;
+  pointer-events: none; 
+}
+
+.sliderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+.slider {
+  width: 120px; /* Make both sliders the same width */
+  cursor: pointer;
 }
