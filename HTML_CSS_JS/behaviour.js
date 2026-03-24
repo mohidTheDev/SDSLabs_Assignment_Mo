@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 ctx.lineCap = "round";
 ctx.lineJoin = "round";
 
-let erarserMode = false
+let eraserMode = false
 let penDown = false
 let allPaths = []
 let currentPath
@@ -12,12 +12,13 @@ let mousePos = [0, 0]
 let lastMousePos = [0, 0]
 let pressedKeys = {}
 
-//0: pen 1: brush 2: eraser
-let brushType = 0;
+//0: pen 1: brush
+let brushType = 1;
 
 function toggleEraserMode() {
-    erarserMode = !erarserMode
-    if (erarserMode) {
+    eraserMode = !eraserMode
+    if (eraserMode)
+    {
         ctx.globalCompositeOperation = 'destination-out';
     }
     else {
@@ -32,11 +33,19 @@ function redraw() {
         ctx.lineWidth = allPaths[i][1]
         ctx.strokeStyle = allPaths[i][2]
         ctx.globalAlpha = allPaths[i][3]
+        ctx.globalCompositeOperation = allPaths[i][4]
         ctx.stroke(allPaths[i][0]);
     }
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
     ctx.strokeStyle = colourPicker.value;
+    if (eraserMode)
+    {
+        ctx.globalCompositeOperation = 'destination-out';
+    }
+    else {
+        ctx.globalCompositeOperation = 'source-over';
+    }
 }
 
 function updateBrushSize(event) {
@@ -132,7 +141,7 @@ function endPath() {
     }
 
 
-    allPaths.push([currentPath, savedThickness, ctx.strokeStyle, ctx.globalAlpha]);
+    allPaths.push([currentPath, savedThickness, ctx.strokeStyle, ctx.globalAlpha, ctx.globalCompositeOperation]);
     penDown = false;
 }
 
