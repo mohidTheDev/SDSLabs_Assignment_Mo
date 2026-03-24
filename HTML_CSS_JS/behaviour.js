@@ -11,14 +11,13 @@ let currentPath
 let mousePos = [0, 0]
 let lastMousePos = [0, 0]
 let pressedKeys = {}
-
 //0: pen 1: brush
-let brushType = 1;
+let brushType = 0;
 
 function toggleEraserMode() {
     eraserMode = !eraserMode
-    if (eraserMode)
-    {
+    eraserButton.classList.toggle("toggled")
+    if (eraserMode) {
         ctx.globalCompositeOperation = 'destination-out';
     }
     else {
@@ -26,7 +25,22 @@ function toggleEraserMode() {
     }
 }
 
-function redraw() {
+function toggleMode() {
+    document.body.classList.toggle("darkMode");
+    const isDarkMode = document.body.classList.contains("darkMode");
+    const allIcons = document.querySelectorAll(".iconButton img");
+
+    for (let i = 0; i < allIcons.length; i++) {
+        let currentIcon = allIcons[i]; 
+        if (isDarkMode === true) {
+            currentIcon.src = currentIcon.src.replace("Icons/Light/", "Icons/Dark/");
+        } else {
+            currentIcon.src = currentIcon.src.replace("Icons/Dark/", "Icons/Light/");
+        }
+    }
+}
+function redraw()
+{
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < allPaths.length; i++) {
         ctx.strokeStyle = colourPicker.value;
@@ -70,6 +84,25 @@ function setMousePos(event) {
     mouseY = event.clientY - canvasRect.top;
     mousePos = [mouseX, mouseY];
     update();
+}
+
+function clearToggles()
+{
+    penButton.classList.remove("toggled");
+    brushButton.classList.remove("toggled");
+}
+function penButtonPressed()
+{
+    brushType = 0;
+    clearToggles();
+    penButton.classList.toggle("toggled");
+}
+
+function brushButtonPressed()
+{
+    brushType = 1;
+    clearToggles();
+    brushButton.classList.toggle("toggled");
 }
 
 function keyDown(event) {
@@ -185,3 +218,16 @@ opacitySlider.addEventListener("input", updateOpacity);
 
 const colourPicker = document.getElementById("colourSelect");
 colourPicker.addEventListener("input", updateColour);
+
+const penButton = document.getElementById("penButton");
+penButton.addEventListener("click", penButtonPressed);
+penButton.classList.toggle("toggled");
+
+const brushButton = document.getElementById("brushButton");
+brushButton.addEventListener("click", brushButtonPressed);
+
+const eraserButton = document.getElementById("eraserButton");
+eraserButton.addEventListener("click", toggleEraserMode);
+
+const modeButton = document.getElementById("modeButton");
+modeButton.addEventListener("click", toggleMode);
