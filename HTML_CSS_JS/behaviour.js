@@ -3,25 +3,17 @@ const ctx = canvas.getContext("2d");
 
 ctx.lineCap = "round";
 ctx.lineJoin = "round";
-/*
-brush class
--image for shape
--colour 
--size
--eraase mode
-*/
-/*
-can use for transparent/translucent brushes
-ctx.fillStyle = "rgb(0 0 200 / 50%)";
-ctx.strokeStyle = "rgb(whatever)"
-ctx.fillRect(30, 30, 50, 50);
-*/
+
 let erarserMode = false
 let penDown = false
 let allPaths = []
 let currentPath
-let mousePos = []
+let mousePos = [0, 0]
+let lastMousePos = [0, 0]
 let pressedKeys = {}
+
+//0: pen 1: brush 2: eraser
+let brushType = 0;
 
 function toggleEraserMode() {
     erarserMode = !erarserMode
@@ -33,8 +25,7 @@ function toggleEraserMode() {
     }
 }
 
-function redraw()
-{
+function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < allPaths.length; i++) {
         ctx.strokeStyle = colourPicker.value;
@@ -65,6 +56,7 @@ function updateOpacity(event) {
 
 function setMousePos(event) {
     const canvasRect = canvas.getBoundingClientRect();
+    lastMousePos = [mousePos[0], mousePos[1]]
     mouseX = event.clientX - canvasRect.left;
     mouseY = event.clientY - canvasRect.top;
     mousePos = [mouseX, mouseY];
@@ -99,28 +91,61 @@ function mouseUp(event) {
 }
 
 function startPath() {
-
     currentPath = new Path2D();
-    currentPath.moveTo(mousePos[0], mousePos[1]);
-    penDown = true
+    lastMousePos = [mousePos[0], mousePos[1]];
+    if (brushType === 0) {
+        currentPath.moveTo(mousePos[0], mousePos[1]);
+    }
+    penDown = true;
 }
 
 function updateCurrentPath() {
     if (!penDown) {
         return;
     }
-    currentPath.lineTo(mousePos[0], mousePos[1]);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (brushType === 0) {
+        currentPath.lineTo(mousePos[0], mousePos[1]);
+
+    } else if (brushType === 1) {
+        const lineCount = Math.max(5, 0.5 * sizeSlider.value);
+        const spread = sizeSlider.value;
+
+        for (let i = 0; i < lineCount; i++) {
+            const offset = (i - (lineCount - 1) / 2) * (spread / lineCount);
+            currentPath.moveTo(lastMousePos[0] + offset, lastMousePos[1] + offset);
+            currentPath.lineTo(mousePos[0] + offset, mousePos[1] + offset);
+        }
+    }
+
     redraw();
     draw();
 }
+
 function endPath() {
-    allPaths.push([currentPath, ctx.lineWidth, ctx.strokeStyle, ctx.globalAlpha]);
-    penDown = false
+    let savedThickness;
+
+    if (brushType === 1) {
+        savedThickness = sizeSlider.value / 6;
+    } 
+    else {
+        savedThickness = ctx.lineWidth;
+    }
+
+
+    allPaths.push([currentPath, savedThickness, ctx.strokeStyle, ctx.globalAlpha]);
+    penDown = false;
 }
 
 function draw() {
+    if (brushType === 1) {
+        ctx.lineWidth = sizeSlider.value / 6;
+    }
+    else {
+        ctx.lineWidth = sizeSlider.value;
+    }
+
     ctx.stroke(currentPath);
+    ctx.lineWidth = sizeSlider.value;
 }
 
 
