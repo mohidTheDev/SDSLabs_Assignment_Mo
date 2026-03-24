@@ -13,7 +13,7 @@ let lastMousePos = [0, 0]
 let pressedKeys = {}
 //0: pen 1: brush
 let brushType = 0;
-let savedCanvasImage = null; 
+let savedCanvasImage = null;
 
 function toggleEraserMode() {
     eraserMode = !eraserMode
@@ -106,20 +106,20 @@ function loadState() {
 
 function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     if (savedCanvasImage !== null) {
-        ctx.globalCompositeOperation = 'source-over'; 
+        ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
         ctx.drawImage(savedCanvasImage, 0, 0);
-    }    
-    
+    }
+
     for (let i = 0; i < allPaths.length; i++) {
         ctx.strokeStyle = colourPicker.value;
-        ctx.lineWidth = allPaths[i][1]
-        ctx.strokeStyle = allPaths[i][2]
-        ctx.globalAlpha = allPaths[i][3]
-        ctx.globalCompositeOperation = allPaths[i][4]
-        ctx.stroke(allPaths[i][0]);
+        ctx.lineWidth = allPaths[i].lineWidth
+        ctx.strokeStyle = allPaths[i].strokeStyle
+        ctx.globalAlpha = allPaths[i].alpha
+        ctx.globalCompositeOperation = allPaths[i].composite
+        ctx.stroke(allPaths[i].path);
     }
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
@@ -246,7 +246,14 @@ function endPath() {
     }
 
 
-    allPaths.push([currentPath, savedThickness, ctx.strokeStyle, ctx.globalAlpha, ctx.globalCompositeOperation]);
+    allPaths.push({
+        type: "path",
+        path: currentPath,
+        lineWidth: savedThickness,
+        strokeStyle: ctx.strokeStyle,
+        alpha: ctx.globalAlpha,
+        composite: ctx.globalCompositeOperation
+    });
     penDown = false;
 
     saveState();
