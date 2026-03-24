@@ -13,6 +13,7 @@ let lastMousePos = [0, 0]
 let pressedKeys = {}
 //0: pen 1: brush
 let brushType = 0;
+let savedCanvasImage = null; 
 
 function toggleEraserMode() {
     eraserMode = !eraserMode
@@ -23,6 +24,7 @@ function toggleEraserMode() {
     else {
         ctx.globalCompositeOperation = 'source-over';
     }
+    saveState();
 }
 
 function toggleMode() {
@@ -31,17 +33,86 @@ function toggleMode() {
     const allIcons = document.querySelectorAll(".iconButton img");
 
     for (let i = 0; i < allIcons.length; i++) {
-        let currentIcon = allIcons[i]; 
+        let currentIcon = allIcons[i];
         if (isDarkMode === true) {
             currentIcon.src = currentIcon.src.replace("Icons/Light/", "Icons/Dark/");
         } else {
             currentIcon.src = currentIcon.src.replace("Icons/Dark/", "Icons/Light/");
         }
     }
+    saveState();
 }
-function redraw()
-{
+
+function saveState() {
+    localStorage.setItem("brushSize", sizeSlider.value);
+    localStorage.setItem("brushOpacity", opacitySlider.value);
+    localStorage.setItem("brushColor", colourPicker.value);
+    localStorage.setItem("brushType", brushType);
+    localStorage.setItem("eraserMode", eraserMode);
+    localStorage.setItem("isDarkMode", document.body.classList.contains("darkMode"));
+    localStorage.setItem("canvasDrawing", canvas.toDataURL());
+}
+
+function loadState() {
+    if (localStorage.getItem("brushSize") !== null) {
+        sizeSlider.value = localStorage.getItem("brushSize");
+        ctx.lineWidth = sizeSlider.value;
+    }
+
+    if (localStorage.getItem("brushOpacity") !== null) {
+        opacitySlider.value = localStorage.getItem("brushOpacity");
+        ctx.globalAlpha = opacitySlider.value;
+    }
+
+    if (localStorage.getItem("brushColor") !== null) {
+        colourPicker.value = localStorage.getItem("brushColor");
+        ctx.strokeStyle = colourPicker.value;
+    }
+
+    if (localStorage.getItem("brushType") !== null) {
+        brushType = parseInt(localStorage.getItem("brushType"));
+        clearToggles();
+        if (brushType === 0) penButton.classList.add("toggled");
+        if (brushType === 1) brushButton.classList.add("toggled");
+    }
+
+    if (localStorage.getItem("eraserMode") !== null) {
+        eraserMode = localStorage.getItem("eraserMode") === "true";
+        if (eraserMode) {
+            eraserButton.classList.add("toggled");
+            ctx.globalCompositeOperation = 'destination-out';
+        }
+    }
+
+    if (localStorage.getItem("isDarkMode") === "true") {
+        document.body.classList.add("darkMode");
+        const allIcons = document.querySelectorAll(".iconButton img");
+        for (let i = 0; i < allIcons.length; i++) {
+            let currentIcon = allIcons[i];
+            currentIcon.src = currentIcon.src.replace("Icons/Light/", "Icons/Dark/");
+        }
+    }
+
+    const savedImage = localStorage.getItem("canvasDrawing");
+    if (savedImage) {
+        let img = new Image();
+        img.onload = function () {
+            savedCanvasImage = img;
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = savedImage;
+    }
+}
+
+function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (savedCanvasImage !== null) {
+        ctx.globalCompositeOperation = 'source-over'; 
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(savedCanvasImage, 0, 0);
+    }    
+    
     for (let i = 0; i < allPaths.length; i++) {
         ctx.strokeStyle = colourPicker.value;
         ctx.lineWidth = allPaths[i][1]
@@ -53,8 +124,7 @@ function redraw()
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
     ctx.strokeStyle = colourPicker.value;
-    if (eraserMode)
-    {
+    if (eraserMode) {
         ctx.globalCompositeOperation = 'destination-out';
     }
     else {
@@ -64,15 +134,18 @@ function redraw()
 
 function updateBrushSize(event) {
     ctx.lineWidth = event.target.value;
+    saveState();
 }
 
 function updateColour(event) {
     console.log(event.target.value);
     ctx.strokeStyle = event.target.value;
+    saveState();
 }
 
 function updateOpacity(event) {
     ctx.globalAlpha = event.target.value;
+    saveState();
 }
 
 /* INPUT CHECKS */
@@ -86,23 +159,22 @@ function setMousePos(event) {
     update();
 }
 
-function clearToggles()
-{
+function clearToggles() {
     penButton.classList.remove("toggled");
     brushButton.classList.remove("toggled");
 }
-function penButtonPressed()
-{
+function penButtonPressed() {
     brushType = 0;
     clearToggles();
     penButton.classList.toggle("toggled");
+    saveState();
 }
 
-function brushButtonPressed()
-{
+function brushButtonPressed() {
     brushType = 1;
     clearToggles();
     brushButton.classList.toggle("toggled");
+    saveState();
 }
 
 function keyDown(event) {
@@ -168,7 +240,7 @@ function endPath() {
 
     if (brushType === 1) {
         savedThickness = sizeSlider.value / 6;
-    } 
+    }
     else {
         savedThickness = ctx.lineWidth;
     }
@@ -176,6 +248,8 @@ function endPath() {
 
     allPaths.push([currentPath, savedThickness, ctx.strokeStyle, ctx.globalAlpha, ctx.globalCompositeOperation]);
     penDown = false;
+
+    saveState();
 }
 
 function draw() {
@@ -194,6 +268,7 @@ function draw() {
 function undo() {
     allPaths.pop();
     redraw();
+    saveState();
 }
 
 function update() {
@@ -231,3 +306,5 @@ eraserButton.addEventListener("click", toggleEraserMode);
 
 const modeButton = document.getElementById("modeButton");
 modeButton.addEventListener("click", toggleMode);
+
+loadState();
