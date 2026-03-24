@@ -14,10 +14,11 @@ let pressedKeys = {}
 //0: pen 1: brush
 let brushType = 0;
 let savedCanvasImage = null;
+let selectMode = false
 
 function toggleEraserMode() {
-    eraserMode = !eraserMode
-    eraserButton.classList.toggle("toggled")
+    eraserMode = !eraserMode;
+    eraserButton.classList.toggle("toggled");
     if (eraserMode) {
         ctx.globalCompositeOperation = 'destination-out';
     }
@@ -25,6 +26,29 @@ function toggleEraserMode() {
         ctx.globalCompositeOperation = 'source-over';
     }
     saveState();
+}
+
+function toggleSelectMode()
+{
+    selectMode = !selectMode;
+    selectButton.classList.toggle("toggled");
+    if (!selectMode)
+    {
+        if(brushType === 0){
+            penButtonPressed();
+        }
+        else
+        {
+            brushButtonPressed();
+        }
+        return
+    }
+
+    if(eraserMode)
+    {
+        toggleEraserMode();
+    }
+    clearToggles();
 }
 
 function toggleMode() {
@@ -134,6 +158,30 @@ function insertImage() {
     }
 }
 
+function insertText() {
+    const text = prompt("Enter your text:");
+    if (text) {
+        const x = canvas.width / 4;
+        const y = canvas.height / 2;
+        
+        const fontSize = Math.max(12, sizeSlider.value * 2); 
+
+        allPaths.push({
+            type: 'text',
+            text: text,
+            x: x,
+            y: y,
+            size: fontSize,
+            color: colourPicker.value,
+            alpha: opacitySlider.value,
+            composite: 'source-over' 
+        });
+
+        redraw();
+        saveState();
+    }
+}
+
 function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -151,6 +199,14 @@ function redraw() {
             ctx.globalCompositeOperation = item.composite;
             ctx.drawImage(item.data, item.x, item.y, item.w, item.h);
         } 
+        else if (item.type === 'text') {
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
+            ctx.fillStyle = item.color;
+            ctx.font = `${item.size}px Arial`;
+            ctx.textBaseline = "top";
+            ctx.fillText(item.text, item.x, item.y);
+        }
         else {
             const isArray = Array.isArray(item);
             ctx.lineWidth = isArray ? item[1] : item.lineWidth;
@@ -164,7 +220,14 @@ function redraw() {
     ctx.lineWidth = sizeSlider.value;
     ctx.globalAlpha = opacitySlider.value;
     ctx.strokeStyle = colourPicker.value;
-    ctx.globalCompositeOperation = eraserMode ? 'destination-out' : 'source-over';
+    if (eraserMode)
+    {
+        ctx.globalCompositeOperation = 'destination-out'
+    }
+    else
+    {
+        ctx.globalCompositeOperation = 'source-over'
+    }
 }
 
 function updateBrushSize(event) {
@@ -231,8 +294,42 @@ function keyUp(event) {
 }
 
 function mouseDown(event) {
-    /* check if mouse is in canvas*/
-    startPath()
+    if (!selectMode) {
+        startPath();
+        return;
+    }
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - canvasRect.left;
+    const clickY = event.clientY - canvasRect.top;
+
+    for (let i = allPaths.length - 1; i >= 0; i--) {
+        const item = allPaths[i];
+        
+        if (item.type === 'text') {
+            ctx.font = `${item.size}px Arial`;
+            const textWidth = ctx.measureText(item.text).width;
+            const textHeight = item.size; 
+
+            if (clickX >= item.x && clickX <= item.x + textWidth &&
+                clickY >= item.y && clickY <= item.y + textHeight) {
+                
+                const newText = prompt("Edit text:", item.text);
+                
+                if (newText !== null && newText !== "") {
+                    item.text = newText;
+                    redraw();
+                    saveState();
+                } else if (newText === "") {
+                    allPaths.splice(i, 1);
+                    redraw();
+                    saveState();
+                }
+                toggleSelectMode();
+                return;
+            }
+        }
+    }
 }
 
 function mouseUp(event) {
@@ -351,5 +448,11 @@ modeButton.addEventListener("click", toggleMode);
 
 const imageButton = document.getElementById("imageButton");
 imageButton.addEventListener("click", insertImage);
+
+const textButton = document.getElementById("textButton");
+textButton.addEventListener("click", insertText);
+
+const selectButton = document.getElementById("selectButton");
+selectButton.addEventListener("click", toggleSelectMode);
 
 loadState();
