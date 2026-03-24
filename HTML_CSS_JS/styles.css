@@ -1,14 +1,32 @@
+:root {
+    --bgColour: beige;
+    --textColour: #000000;
+    --canvasBg: #ffffff; 
+    --canvasBorder: #ab7d33;
+    --sliderColour: #feda58;
+}
+
+body.darkMode {
+    --bgColour: #1b1c2e;
+    --textColour: #eeeeee;
+    --canvasBg: #888888;
+    --canvasBorder: #aaa6ff;
+    --sliderColour: #5d33c9; 
+}
+
 body {
-    background-color: beige;
+    background-color: var(--bgColour);
+    color: var(--textColour);
+    transition: background-color 0.3s ease, color 0.3s ease; 
+    padding: 20px;
 }
 
 #canvas {
-    background-color: white;
+    background-color: var(--canvasBg);
     border-style: solid;
     border-width: 5px;
-    border-color: black;
+    border-color: var(--canvasBorder);
     /*Add scaling of canvas*/
-    background: white;
     display: block;
     max-width: 100%;
     height: auto;
@@ -19,11 +37,6 @@ body {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-}
-
-body {
-    background-color: #f7f7f7;
-    padding: 20px;
 }
 
 .app-wrapper {
@@ -37,9 +50,9 @@ body {
 
 .header {
     text-align: center;
-    border: 1px solid black;
     padding: 10px;
-    background-color: #fff;
+    background-color: transparent;
+    border-color: transparent;
 }
 
 .topControls {
@@ -106,12 +119,21 @@ input[type="range"].opacity-range {
     cursor: pointer;
 }
 
+.iconButton:active {
+    filter: brightness(0.5)
+}
+
 .iconButton img {
   width: 100%;
   height: 100%;
   object-fit: contain; 
   display: block;
   pointer-events: none; 
+}
+
+.iconButton.toggled {
+    filter: brightness(0.6);
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
 }
 
 .sliderGroup {
@@ -121,7 +143,19 @@ input[type="range"].opacity-range {
   justify-content: center;
 }
 
+.sliderContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sliderContainer label {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--textColour);
+    width: 60px; 
+}
 .slider {
-  width: 120px; /* Make both sliders the same width */
+  width: 120px;
+  accent-color: var(--sliderColour);
   cursor: pointer;
 }

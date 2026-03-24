@@ -31,33 +31,41 @@
             <div class="control topCenter">
                 <input type="color" id="colourSelect" value="#000000" class="color-picker">
                 <div class="sliderGroup">
-                    <input type="range" id="sizeSlider" min="1" max="50" value="5" class="slider"
-                        title="Brush Size">
-                    <input type="range" id="opacitySlider" min="0" max="1" value="1" class="slider"
-                        step="0.05" title="Opacity">
+                    <div class="sliderContainer">
+                        <label for="sizeSlider">SIZE</label>
+                        <input type="range" id="sizeSlider" min="1" max="50" value="5" class="slider"
+                            title="Brush Size">
+                    </div>
+                    <div class="sliderContainer">
+                        <label for="opacitySlider">OPACITY</label>
+                        <input type="range" id="opacitySlider" min="0" max="1" value="1" class="slider" step="0.05"
+                            title="Opacity">
+                    </div>
                 </div>
             </div>
 
             <div class="control topRight">
-                <button class="iconButton">
+                <button class="iconButton" id="penButton">
                     <img src="Icons/Light/pen.png">
                 </button>
-                <button class="iconButton">
+                <button class="iconButton" id="brushButton">
                     <img src="Icons/Light/brush.png">
                 </button>
-                <button class="iconButton">
+                <button class="iconButton" id="eraserButton">
                     <img src="Icons/Light/eraser.png">
                 </button>
             </div>
         </nav>
 
         <main class="canvasArea">
-            <canvas id="canvas" width="800" height="400"></canvas>
+            <canvas id="canvas" width="1000" height="500"></canvas>
         </main>
 
         <footer class="bottomControls">
             <div class="bottomLeft">
-                <button class="iconButton"></button>
+                <button class="iconButton" id="modeButton">
+                    <img src="Icons/Light/mode.png">
+                </button>
             </div>
 
             <div class="bottomRight">
