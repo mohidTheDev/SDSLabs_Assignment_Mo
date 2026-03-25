@@ -23,6 +23,24 @@ let shapeTopLeft = [0, 0]
 let currentShape = "rect";
 
 let drawingShape = false;
+let drawingImage = false;
+
+const imagePreviewLineWidth = 10;
+const imagePreviewLineColour = "rgb(0, 0, 0)";
+const imagePreviewLineAlpha = 1;
+
+
+function resetStrokeSettings() {
+    ctx.lineWidth = sizeSlider.value;
+    ctx.globalAlpha = opacitySlider.value;
+    ctx.strokeStyle = colourPicker.value;
+    if (eraserMode) {
+        ctx.globalCompositeOperation = 'destination-out'
+    }
+    else {
+        ctx.globalCompositeOperation = 'source-over'
+    }
+}
 
 function toggleEraserMode() {
     eraserMode = !eraserMode;
@@ -208,16 +226,25 @@ function insertImage(mouseX, mouseY) {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = function () {
-            const width = img.width / 2;
-            const height = img.height / 2;
-            const x = mouseX - width / 2;
-            const y = mouseY - height / 2;
+            let width = img.width;
+            let height = img.height;
+            const boxWidth = Math.abs(mouseX - shapeTopLeft[0]);
+            const boxHeight = Math.abs(mouseY - shapeTopLeft[1]);
+            const ratio = height / width;
+            if (boxHeight / boxWidth > ratio) {
+                width = boxWidth;
+                height = ratio * width;
+            }
+            else {
+                height = boxHeight;
+                width = height / ratio;
+            }
 
             allPaths.push({
                 type: 'image',
                 data: img,
-                x: x,
-                y: y,
+                x: Math.min(shapeTopLeft[0], mouseX),
+                y: Math.min(shapeTopLeft[1], mouseY),
                 w: width,
                 h: height,
                 alpha: ctx.globalAlpha,
@@ -371,19 +398,10 @@ function redraw() {
         }
     }
 
-    ctx.lineWidth = sizeSlider.value;
-    ctx.globalAlpha = opacitySlider.value;
-    ctx.strokeStyle = colourPicker.value;
-    if (eraserMode) {
-        ctx.globalCompositeOperation = 'destination-out'
-    }
-    else {
-        ctx.globalCompositeOperation = 'source-over'
-    }
+    resetStrokeSettings();
 }
 
 function drawShapePreview() {
-    console.log("bounding box");
     redraw();
     const a1 = shapeTopLeft[0];
     const b1 = shapeTopLeft[1];
@@ -391,7 +409,7 @@ function drawShapePreview() {
     const b2 = mousePos[1];
     ctx.beginPath();
     if (currentShape === "rect") {
-        ctx.rect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0] - shapeTopLeft[0], mousePos[1] - shapeTopLeft[1]);
+        ctx.rect(a1, b1, a2 - a1, b2 - b1);
     }
     else if (currentShape === "circle") {
         const radius = 0.5 * Math.min(Math.abs(b2 - b1), Math.abs(a2 - a1));
@@ -406,6 +424,18 @@ function drawShapePreview() {
         ctx.closePath();
     }
     ctx.stroke();
+}
+
+function drawImagePreview() {
+    redraw();
+    ctx.lineWidth = imagePreviewLineWidth;
+    ctx.strokeStyle = imagePreviewLineColour;
+    ctx.globalAlpha = imagePreviewLineAlpha;
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.beginPath();
+    ctx.rect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0] - shapeTopLeft[0], mousePos[1] - shapeTopLeft[1]);
+    ctx.stroke();
+
 }
 
 function updateBrushSize(event) {
@@ -492,7 +522,9 @@ function keyUp(event) {
 function mouseDown(event) {
     console.log("Element clicked:", event.target);
     if (imageMode) {
-        insertImage(mousePos[0], mousePos[1]);
+        shapeTopLeft = [mousePos[0], mousePos[1]];
+        drawingImage = true;
+        //insertImage(mousePos[0], mousePos[1]);
         //toggleImageMode();
         return;
     }
@@ -502,7 +534,7 @@ function mouseDown(event) {
         return;
     }
     if (shapeMode) {
-        shapeTopLeft = [mousePos[0], mousePos[1]]
+        shapeTopLeft = [mousePos[0], mousePos[1]];
         drawingShape = true;
         return
     }
@@ -545,21 +577,28 @@ function mouseDown(event) {
 }
 
 function mouseUp(event) {
-    if (shapeMode === false) {
-        endPath();
+    if (shapeMode) {
+        if (currentShape === "rect") {
+            insertRect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+            drawingShape = false;
+        }
+        else if (currentShape === "circle") {
+            insertCircle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+            drawingShape = false;
+        }
+        else {
+            insertTriangle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+            drawingShape = false;
+        }
         return;
     }
-    if (currentShape === "rect") {
-        insertRect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
-        drawingShape = false;
-    }
-    else if (currentShape === "circle") {
-        insertCircle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
-        drawingShape = false;
+    else if (imageMode) {
+        insertImage(mousePos[0], mousePos[1]);
+        resetStrokeSettings();
+        drawingImage = false;
     }
     else {
-        insertTriangle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
-        drawingShape = false;
+        endPath();
     }
 }
 
@@ -641,6 +680,9 @@ function update() {
     updateCurrentPath();
     if (drawingShape) {
         drawShapePreview();
+    }
+    if (drawingImage) {
+        drawImagePreview();
     }
 }
 
