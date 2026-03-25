@@ -17,6 +17,10 @@ let savedCanvasImage = null;
 let selectMode = false;
 let textBoxMode = false;
 let imageMode = false;
+let shapeMode = false;
+let shapeTopLeft = [0, 0]
+//rect, circle, triangle
+let currentShape = "rect";
 
 function toggleEraserMode() {
     eraserMode = !eraserMode;
@@ -89,6 +93,27 @@ function toggleImageMode() {
         toggleEraserMode();
     }
     imageButton.classList.toggle("toggled");
+}
+
+function rectMode() {
+    shapeMode = true
+    currentShape = "rect"
+    clearSpecialToggles()
+    rectButton.classList.toggle("toggled");
+}
+
+function circleMode() {
+    shapeMode = true
+    currentShape = "circle"
+    clearSpecialToggles()
+    circleButton.classList.toggle("toggled");
+}
+
+function triangleMode() {
+    shapeMode = true
+    currentShape = "triangle"
+    clearSpecialToggles()
+    triangleButton.classList.toggle("toggled");
 }
 
 function toggleMode() {
@@ -222,6 +247,45 @@ function insertText(mouseX, mouseY) {
     }
 }
 
+function insertRect(x1, y1, x2, y2) {
+    allPaths.push({
+        type: "rect",
+        a1: x1,
+        b1: y1,
+        a2: x2,
+        b2: y2
+    });
+    redraw();
+    saveState();
+}
+
+function insertCircle(x1, y1, x2, y2) {
+    const r = 0.5 * Math.min(Math.abs(x2 -x1), Math.abs(y2 - y1));
+    const cx = x1 + r
+    const cy = y1 + r
+    allPaths.push({
+        type: "circle",
+        centerX: cx,
+        centerY: cy,
+        radius: r
+    });
+    redraw();
+    saveState();
+
+}
+
+function insertTriangle(x1, y1, x2, y2) {
+    allPaths.push({
+        type: "triangle",
+        a1: x1,
+        b1: y1,
+        a2: x2,
+        b2: y2
+    });
+    redraw();
+    saveState();
+}
+
 function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -247,6 +311,24 @@ function redraw() {
             ctx.textBaseline = "top";
             ctx.fillText(item.text, item.x, item.y);
         }
+        else if (item.type === "rect") {
+            ctx.beginPath();
+            ctx.rect(item.a1, item.b1, item.a2 - item.a1, item.b2 - item.b1);
+            ctx.stroke();
+        }
+        else if (item.type === "circle") {
+            ctx.beginPath();
+            ctx.arc(item.centerX, item.centerY, item.radius, 0, 2*Math.PI);
+            ctx.stroke();
+        }
+        else if (item.type === "triangle") {
+            ctx.beginPath();
+            ctx.moveTo((item.a1 + item.a2) / 2, item.b1);
+            ctx.lineTo(item.a2, item.b2);
+            ctx.lineTo(item.a1, item.b2);
+            ctx.closePath();
+            ctx.stroke();
+        }                
         else {
             const isArray = Array.isArray(item);
             ctx.lineWidth = isArray ? item[1] : item.lineWidth;
@@ -301,6 +383,9 @@ function clearToggles() {
 }
 
 function clearSpecialToggles() {
+    rectButton.classList.remove("toggled");
+    circleButton.classList.remove("toggled");
+    triangleButton.classList.remove("toggled");
     selectButton.classList.remove("toggled");
     textButton.classList.remove("toggled");
     imageButton.classList.remove("toggled");
@@ -338,20 +423,21 @@ function keyUp(event) {
 }
 
 function mouseDown(event) {
-    if (imageMode)
-    {
+    if (imageMode) {
         insertImage(mousePos[0], mousePos[1]);
         toggleImageMode();
         return;
     }
-    if (textBoxMode)
-    {
+    if (textBoxMode) {
         insertText(mousePos[0], mousePos[1]);
         toggleTextBoxMode();
         return;
     }
-    if (!selectMode) 
-    {
+    if (shapeMode) {
+        shapeTopLeft = [mousePos[0], mousePos[1]]
+        return
+    }
+    if (!selectMode) {
         startPath();
         return;
     }
@@ -390,7 +476,26 @@ function mouseDown(event) {
 }
 
 function mouseUp(event) {
-    endPath()
+    if (shapeMode === false) {
+        endPath();
+        return;
+    }
+    if (currentShape === "rect") {
+        insertRect(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+    }
+    else if(currentShape === "circle")
+    {
+        insertCircle(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+    }
+    else
+    {
+        insertTriangle(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+    }
+    shapeMode = false
+    rectButton.classList.remove("toggled");
+    circleButton.classList.remove("toggled");
+    triangleButton.classList.remove("toggled");
+
 }
 
 function startPath() {
@@ -512,4 +617,12 @@ textButton.addEventListener("click", toggleTextBoxMode);
 const selectButton = document.getElementById("selectButton");
 selectButton.addEventListener("click", toggleSelectMode);
 
+const rectButton = document.getElementById("rectButton");
+rectButton.addEventListener("click", rectMode);
+
+const circleButton = document.getElementById("circleButton");
+circleButton.addEventListener("click", circleMode);
+
+const triangleButton = document.getElementById("triangleButton");
+triangleButton.addEventListener("click", triangleMode);
 loadState();
