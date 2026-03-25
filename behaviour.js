@@ -22,6 +22,8 @@ let shapeTopLeft = [0, 0]
 //rect, circle, triangle
 let currentShape = "rect";
 
+let drawingShape = false;
+
 function toggleEraserMode() {
     eraserMode = !eraserMode;
     eraserButton.classList.toggle("toggled");
@@ -98,16 +100,13 @@ function toggleImageMode() {
     imageButton.classList.toggle("toggled");
 }
 
-function toggleShapeMode(shape, button)
-{
+function toggleShapeMode(shape, button) {
     clearSpecialToggles();
     clearShapeToggles();
-    if (shapeMode && currentShape === shape)
-    {
+    if (shapeMode && currentShape === shape) {
         shapeMode = false;
     }
-    else
-    {
+    else {
         shapeMode = true;
         button.classList.toggle("toggled");
     }
@@ -263,7 +262,11 @@ function insertRect(x1, y1, x2, y2) {
         a1: x1,
         b1: y1,
         a2: x2,
-        b2: y2
+        b2: y2,
+        lineWidth: ctx.lineWidth,
+        strokeStyle: ctx.strokeStyle,
+        alpha: ctx.globalAlpha,
+        composite: ctx.globalCompositeOperation
     });
     redraw();
     saveState();
@@ -271,13 +274,17 @@ function insertRect(x1, y1, x2, y2) {
 
 function insertCircle(x1, y1, x2, y2) {
     const r = 0.5 * Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
-    const cx = x1 + r
-    const cy = y1 + r
+    const cx = x1 + r * Math.sign(x2 - x1);
+    const cy = y1 + r * Math.sign(y2 - y1);
     allPaths.push({
         type: "circle",
         centerX: cx,
         centerY: cy,
-        radius: r
+        radius: r,
+        lineWidth: ctx.lineWidth,
+        strokeStyle: ctx.strokeStyle,
+        alpha: ctx.globalAlpha,
+        composite: ctx.globalCompositeOperation
     });
     redraw();
     saveState();
@@ -290,7 +297,11 @@ function insertTriangle(x1, y1, x2, y2) {
         a1: x1,
         b1: y1,
         a2: x2,
-        b2: y2
+        b2: y2,
+        lineWidth: ctx.lineWidth,
+        strokeStyle: ctx.strokeStyle,
+        alpha: ctx.globalAlpha,
+        composite: ctx.globalCompositeOperation
     });
     redraw();
     saveState();
@@ -322,16 +333,28 @@ function redraw() {
             ctx.fillText(item.text, item.x, item.y);
         }
         else if (item.type === "rect") {
+            ctx.lineWidth = item.lineWidth;
+            ctx.strokeStyle = item.strokeStyle;
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
             ctx.beginPath();
             ctx.rect(item.a1, item.b1, item.a2 - item.a1, item.b2 - item.b1);
             ctx.stroke();
         }
         else if (item.type === "circle") {
+            ctx.lineWidth = item.lineWidth;
+            ctx.strokeStyle = item.strokeStyle;
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
             ctx.beginPath();
             ctx.arc(item.centerX, item.centerY, item.radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
         else if (item.type === "triangle") {
+            ctx.lineWidth = item.lineWidth;
+            ctx.strokeStyle = item.strokeStyle;
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
             ctx.beginPath();
             ctx.moveTo((item.a1 + item.a2) / 2, item.b1);
             ctx.lineTo(item.a2, item.b2);
@@ -340,12 +363,11 @@ function redraw() {
             ctx.stroke();
         }
         else {
-            const isArray = Array.isArray(item);
-            ctx.lineWidth = isArray ? item[1] : item.lineWidth;
-            ctx.strokeStyle = isArray ? item[2] : item.strokeStyle;
-            ctx.globalAlpha = isArray ? item[3] : item.alpha;
-            ctx.globalCompositeOperation = isArray ? item[4] : item.composite;
-            ctx.stroke(isArray ? item[0] : item.path);
+            ctx.lineWidth = item.lineWidth;
+            ctx.strokeStyle = item.strokeStyle;
+            ctx.globalAlpha = item.alpha;
+            ctx.globalCompositeOperation = item.composite;
+            ctx.stroke(item.path);
         }
     }
 
@@ -358,6 +380,32 @@ function redraw() {
     else {
         ctx.globalCompositeOperation = 'source-over'
     }
+}
+
+function drawShapePreview() {
+    console.log("bounding box");
+    redraw();
+    const a1 = shapeTopLeft[0];
+    const b1 = shapeTopLeft[1];
+    const a2 = mousePos[0];
+    const b2 = mousePos[1];
+    ctx.beginPath();
+    if (currentShape === "rect") {
+        ctx.rect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0] - shapeTopLeft[0], mousePos[1] - shapeTopLeft[1]);
+    }
+    else if (currentShape === "circle") {
+        const radius = 0.5 * Math.min(Math.abs(b2 - b1), Math.abs(a2 - a1));
+        cx = a1 + radius * Math.sign(a2 - a1);
+        cy = b1 + radius * Math.sign(b2 - b1);
+        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    }
+    else {
+        ctx.moveTo((a1 + a2) / 2, b1);
+        ctx.lineTo(a2, b2);
+        ctx.lineTo(a1, b2);
+        ctx.closePath();
+    }
+    ctx.stroke();
 }
 
 function updateBrushSize(event) {
@@ -392,8 +440,7 @@ function clearToggles() {
     brushButton.classList.remove("toggled");
 }
 
-function clearShapeToggles()
-{
+function clearShapeToggles() {
     rectButton.classList.remove("toggled");
     circleButton.classList.remove("toggled");
     triangleButton.classList.remove("toggled");
@@ -405,8 +452,7 @@ function clearSpecialToggles() {
     imageButton.classList.remove("toggled");
 }
 
-function selectBrush(index, button)
-{
+function selectBrush(index, button) {
     brushType = index;
     clearToggles();
     clearSpecialToggles();
@@ -457,6 +503,7 @@ function mouseDown(event) {
     }
     if (shapeMode) {
         shapeTopLeft = [mousePos[0], mousePos[1]]
+        drawingShape = true;
         return
     }
     if (!selectMode) {
@@ -504,12 +551,15 @@ function mouseUp(event) {
     }
     if (currentShape === "rect") {
         insertRect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+        drawingShape = false;
     }
     else if (currentShape === "circle") {
         insertCircle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+        drawingShape = false;
     }
     else {
         insertTriangle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
+        drawingShape = false;
     }
 }
 
@@ -589,6 +639,9 @@ function undo() {
 
 function update() {
     updateCurrentPath();
+    if (drawingShape) {
+        drawShapePreview();
+    }
 }
 
 
