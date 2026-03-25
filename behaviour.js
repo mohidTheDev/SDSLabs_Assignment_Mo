@@ -38,6 +38,7 @@ function toggleSelectMode() {
     selectMode = !selectMode;
     clearToggles();
     clearSpecialToggles();
+    clearShapeToggles();
     if (!selectMode) {
         if (brushType === 0) {
             penButtonPressed();
@@ -58,6 +59,7 @@ function toggleTextBoxMode() {
     textBoxMode = !textBoxMode
     clearToggles();
     clearSpecialToggles();
+    clearShapeToggles();
     if (!textBoxMode) {
         if (brushType === 0) {
             penButtonPressed();
@@ -79,6 +81,7 @@ function toggleImageMode() {
     imageMode = !imageMode
     clearToggles();
     clearSpecialToggles();
+    clearShapeToggles();
     if (!imageMode) {
         if (brushType === 0) {
             penButtonPressed();
@@ -95,25 +98,32 @@ function toggleImageMode() {
     imageButton.classList.toggle("toggled");
 }
 
+function toggleShapeMode(shape, button)
+{
+    clearSpecialToggles();
+    clearShapeToggles();
+    if (shapeMode && currentShape === shape)
+    {
+        shapeMode = false;
+    }
+    else
+    {
+        shapeMode = true;
+        button.classList.toggle("toggled");
+    }
+    currentShape = shape;
+}
+
 function rectMode() {
-    shapeMode = true
-    currentShape = "rect"
-    clearSpecialToggles()
-    rectButton.classList.toggle("toggled");
+    toggleShapeMode("rect", rectButton);
 }
 
 function circleMode() {
-    shapeMode = true
-    currentShape = "circle"
-    clearSpecialToggles()
-    circleButton.classList.toggle("toggled");
+    toggleShapeMode("circle", circleButton);
 }
 
 function triangleMode() {
-    shapeMode = true
-    currentShape = "triangle"
-    clearSpecialToggles()
-    triangleButton.classList.toggle("toggled");
+    toggleShapeMode("triangle", triangleButton);
 }
 
 function toggleMode() {
@@ -260,7 +270,7 @@ function insertRect(x1, y1, x2, y2) {
 }
 
 function insertCircle(x1, y1, x2, y2) {
-    const r = 0.5 * Math.min(Math.abs(x2 -x1), Math.abs(y2 - y1));
+    const r = 0.5 * Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
     const cx = x1 + r
     const cy = y1 + r
     allPaths.push({
@@ -318,7 +328,7 @@ function redraw() {
         }
         else if (item.type === "circle") {
             ctx.beginPath();
-            ctx.arc(item.centerX, item.centerY, item.radius, 0, 2*Math.PI);
+            ctx.arc(item.centerX, item.centerY, item.radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
         else if (item.type === "triangle") {
@@ -328,7 +338,7 @@ function redraw() {
             ctx.lineTo(item.a1, item.b2);
             ctx.closePath();
             ctx.stroke();
-        }                
+        }
         else {
             const isArray = Array.isArray(item);
             ctx.lineWidth = isArray ? item[1] : item.lineWidth;
@@ -382,26 +392,37 @@ function clearToggles() {
     brushButton.classList.remove("toggled");
 }
 
-function clearSpecialToggles() {
+function clearShapeToggles()
+{
     rectButton.classList.remove("toggled");
     circleButton.classList.remove("toggled");
     triangleButton.classList.remove("toggled");
+}
+
+function clearSpecialToggles() {
     selectButton.classList.remove("toggled");
     textButton.classList.remove("toggled");
     imageButton.classList.remove("toggled");
 }
-function penButtonPressed() {
-    brushType = 0;
+
+function selectBrush(index, button)
+{
+    brushType = index;
     clearToggles();
-    penButton.classList.toggle("toggled");
+    clearSpecialToggles();
+    selectMode = false;
+    textBoxMode = false
+    imageMode = false;
+    button.classList.toggle("toggled");
     saveState();
 }
 
+function penButtonPressed() {
+    selectBrush(0, penButton);
+}
+
 function brushButtonPressed() {
-    brushType = 1;
-    clearToggles();
-    brushButton.classList.toggle("toggled");
-    saveState();
+    selectBrush(1, brushButton);
 }
 
 function keyDown(event) {
@@ -423,14 +444,15 @@ function keyUp(event) {
 }
 
 function mouseDown(event) {
+    console.log("Element clicked:", event.target);
     if (imageMode) {
         insertImage(mousePos[0], mousePos[1]);
-        toggleImageMode();
+        //toggleImageMode();
         return;
     }
     if (textBoxMode) {
         insertText(mousePos[0], mousePos[1]);
-        toggleTextBoxMode();
+        //toggleTextBoxMode();
         return;
     }
     if (shapeMode) {
@@ -468,7 +490,7 @@ function mouseDown(event) {
                     redraw();
                     saveState();
                 }
-                toggleSelectMode();
+                //toggleSelectMode();
                 return;
             }
         }
@@ -481,21 +503,14 @@ function mouseUp(event) {
         return;
     }
     if (currentShape === "rect") {
-        insertRect(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+        insertRect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
     }
-    else if(currentShape === "circle")
-    {
-        insertCircle(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+    else if (currentShape === "circle") {
+        insertCircle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
     }
-    else
-    {
-        insertTriangle(shapeTopLeft[0], shapeTopLeft[1],  mousePos[0], mousePos[1]);
+    else {
+        insertTriangle(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
     }
-    shapeMode = false
-    rectButton.classList.remove("toggled");
-    circleButton.classList.remove("toggled");
-    triangleButton.classList.remove("toggled");
-
 }
 
 function startPath() {
@@ -582,9 +597,9 @@ document.addEventListener("keyup", keyUp);
 
 window.addEventListener('mousemove', setMousePos);
 
-document.addEventListener('mousedown', mouseDown);
-
-document.addEventListener('mouseup', mouseUp);
+canvas.addEventListener('mousemove', setMousePos);
+canvas.addEventListener('mousedown', mouseDown);
+canvas.addEventListener('mouseup', mouseUp);
 
 const sizeSlider = document.getElementById("sizeSlider");
 sizeSlider.addEventListener("input", updateBrushSize);
