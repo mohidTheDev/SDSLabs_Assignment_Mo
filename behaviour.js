@@ -24,6 +24,7 @@ let currentShape = "rect";
 
 let drawingShape = false;
 let drawingImage = false;
+let drawingText = false;
 
 const imagePreviewLineWidth = 10;
 const imagePreviewLineColour = "rgb(0, 0, 0)";
@@ -260,18 +261,23 @@ function insertImage(mouseX, mouseY) {
 }
 
 function insertText(mouseX, mouseY) {
+    const boxWidth = Math.abs(mouseX - shapeTopLeft[0]);
+    const boxHeight = Math.abs(mouseY - shapeTopLeft[1]);
     const text = prompt("Enter your text:");
     if (text) {
-        const x = mousePos[0];
-        const y = mousePos[1];
+        let fontSize = boxHeight;
+        ctx.font = `${fontSize}px Arial`;
+        const textWidth = ctx.measureText(text).width;
 
-        const fontSize = Math.max(12, sizeSlider.value * 2);
+        if (textWidth > boxWidth) {
+            fontSize = fontSize * (boxWidth / textWidth);
+        }
 
         allPaths.push({
             type: 'text',
             text: text,
-            x: x,
-            y: y,
+            x: Math.min(shapeTopLeft[0], mouseX),
+            y: Math.min(shapeTopLeft[1], mouseY),
             size: fontSize,
             color: colourPicker.value,
             alpha: opacitySlider.value,
@@ -413,8 +419,8 @@ function drawShapePreview() {
     }
     else if (currentShape === "circle") {
         const radius = 0.5 * Math.min(Math.abs(b2 - b1), Math.abs(a2 - a1));
-        cx = a1 + radius * Math.sign(a2 - a1);
-        cy = b1 + radius * Math.sign(b2 - b1);
+        const cx = a1 + radius * Math.sign(a2 - a1);
+        const cy = b1 + radius * Math.sign(b2 - b1);
         ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
     }
     else {
@@ -435,7 +441,6 @@ function drawImagePreview() {
     ctx.beginPath();
     ctx.rect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0] - shapeTopLeft[0], mousePos[1] - shapeTopLeft[1]);
     ctx.stroke();
-
 }
 
 function updateBrushSize(event) {
@@ -524,13 +529,11 @@ function mouseDown(event) {
     if (imageMode) {
         shapeTopLeft = [mousePos[0], mousePos[1]];
         drawingImage = true;
-        //insertImage(mousePos[0], mousePos[1]);
-        //toggleImageMode();
         return;
     }
     if (textBoxMode) {
-        insertText(mousePos[0], mousePos[1]);
-        //toggleTextBoxMode();
+        shapeTopLeft = [mousePos[0], mousePos[1]];
+        drawingText = true; 
         return;
     }
     if (shapeMode) {
@@ -596,6 +599,11 @@ function mouseUp(event) {
         insertImage(mousePos[0], mousePos[1]);
         resetStrokeSettings();
         drawingImage = false;
+    }
+    else if (textBoxMode) {
+        insertText(mousePos[0], mousePos[1]);
+        resetStrokeSettings();
+        drawingText = false;
     }
     else {
         endPath();
@@ -682,7 +690,7 @@ function update() {
     if (drawingShape) {
         drawShapePreview();
     }
-    if (drawingImage) {
+    if (drawingImage || drawingText) {
         drawImagePreview();
     }
 }
