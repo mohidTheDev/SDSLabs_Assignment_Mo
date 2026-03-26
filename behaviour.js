@@ -26,6 +26,12 @@ let drawingShape = false;
 let drawingImage = false;
 let drawingText = false;
 
+let shapeSelected = false;
+let selectedShapeIndex = -1;
+let rotatingSelected = false; // not rotating => moving
+let shapeSelectInitialMousePos = [0, 0];
+let initalShape = null;
+
 const imagePreviewLineWidth = 10;
 const imagePreviewLineColour = "rgb(0, 0, 0)";
 const imagePreviewLineAlpha = 1;
@@ -69,6 +75,12 @@ function toggleSelectMode() {
         }
         return
     }
+    else{
+        shapeMode = false;
+        textBoxMode = false;
+        imageMode = false;
+        shapeSelected = false;
+    }
 
     if (eraserMode) {
         toggleEraserMode();
@@ -89,6 +101,12 @@ function toggleTextBoxMode() {
             brushButtonPressed();
         }
         return
+    }
+    else{
+        selectMode = false;
+        shapeSelected = false;
+        shapeMode = false;
+        imageMode = false;
     }
 
     if (eraserMode) {
@@ -112,6 +130,12 @@ function toggleImageMode() {
         }
         return
     }
+    else {
+        selectMode = false;
+        shapeSelected = false;
+        shapeMode = false;
+        textBoxMode = false
+    }
 
     if (eraserMode) {
         toggleEraserMode();
@@ -122,6 +146,12 @@ function toggleImageMode() {
 function toggleShapeMode(shape, button) {
     clearSpecialToggles();
     clearShapeToggles();
+
+    selectMode = false;
+    shapeSelected = false; 
+    textBoxMode = false;
+    imageMode = false;
+
     if (shapeMode && currentShape === shape) {
         shapeMode = false;
     }
@@ -295,7 +325,11 @@ function insertRect(x1, y1, x2, y2) {
         a1: x1,
         b1: y1,
         a2: x2,
-        b2: y2,
+        b2: y1,
+        a3: x2,
+        b3: y2,
+        a4: x1,
+        b4: y2,
         lineWidth: ctx.lineWidth,
         strokeStyle: ctx.strokeStyle,
         alpha: ctx.globalAlpha,
@@ -328,9 +362,11 @@ function insertTriangle(x1, y1, x2, y2) {
     allPaths.push({
         type: "triangle",
         a1: x1,
-        b1: y1,
+        b1: y2,
         a2: x2,
         b2: y2,
+        a3: (x1 + x2) / 2,
+        b3: y1,
         lineWidth: ctx.lineWidth,
         strokeStyle: ctx.strokeStyle,
         alpha: ctx.globalAlpha,
@@ -371,7 +407,11 @@ function redraw() {
             ctx.globalAlpha = item.alpha;
             ctx.globalCompositeOperation = item.composite;
             ctx.beginPath();
-            ctx.rect(item.a1, item.b1, item.a2 - item.a1, item.b2 - item.b1);
+            ctx.moveTo(item.a1, item.b1);
+            ctx.lineTo(item.a2, item.b2);
+            ctx.lineTo(item.a3, item.b3);
+            ctx.lineTo(item.a4, item.b4);
+            ctx.closePath();
             ctx.stroke();
         }
         else if (item.type === "circle") {
@@ -389,9 +429,9 @@ function redraw() {
             ctx.globalAlpha = item.alpha;
             ctx.globalCompositeOperation = item.composite;
             ctx.beginPath();
-            ctx.moveTo((item.a1 + item.a2) / 2, item.b1);
+            ctx.moveTo(item.a1, item.b1);
             ctx.lineTo(item.a2, item.b2);
-            ctx.lineTo(item.a1, item.b2);
+            ctx.lineTo(item.a3, item.b3);
             ctx.closePath();
             ctx.stroke();
         }
@@ -405,6 +445,97 @@ function redraw() {
     }
 
     resetStrokeSettings();
+}
+
+function crossProduct(a, b, p) {
+    return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+}
+
+function pointInPolygon(vertices) {
+    let sign = 0;
+    for (let i = 0; i < vertices.length; i++) {
+        const a = vertices[i];
+        const b = vertices[(i + 1) % vertices.length];
+        const currentCrossProduct = crossProduct(a, b, mousePos);
+
+        if (currentCrossProduct === 0) {
+            continue;
+        }
+
+        if (sign === 0) {
+            sign = Math.sign(currentCrossProduct);
+        }
+
+        if (Math.sign(currentCrossProduct) !== sign) {
+            return false;
+        }
+    }
+
+    return true; 
+}
+function mouseInteriorCheck(){
+    const shape = allPaths[selectedShapeIndex];
+    if (shape.type === "rect")
+    {
+        const v1 = [shape.a1, shape. b1];
+        const v2 = [shape.a2, shape. b2];
+        const v3 = [shape.a3, shape. b3];
+        const v4 = [shape.a4, shape. b4];
+        
+        return pointInPolygon([v1, v2, v3, v4])
+    }
+    else if (shape.type === "triangle")
+    {
+        const v1 = [shape.a1, shape. b1];
+        const v2 = [shape.a2, shape. b2];
+        const v3 = [shape.a3, shape. b3];
+        
+        return pointInPolygon([v1, v2, v3])
+    }
+    else
+    {
+        let mouseDistance = 0;
+        mouseDistance += (mousePos[0] - shape.centerX) ** 2;
+        mouseDistance += (mousePos[1] - shape.centerY) ** 2;
+        mouseDistance = Math.sqrt(mouseDistance);
+        return mouseDistance <= shape.radius;
+    }
+}
+
+function moveShape() {
+    const shape = allPaths[selectedShapeIndex];
+    let move = [0, 0]
+    move[0] = mousePos[0] - shapeSelectInitialMousePos[0];
+    move[1] = mousePos[1] - shapeSelectInitialMousePos[1];
+    if (shape.type === "rect")
+    {
+        shape.a1 = initalShape.a1 + move[0]
+        shape.a2 = initalShape.a2 + move[0]
+        shape.a3 = initalShape.a3 + move[0]
+        shape.a4 = initalShape.a4 + move[0]
+        shape.b1 = initalShape.b1 + move[1]
+        shape.b2 = initalShape.b2 + move[1]
+        shape.b3 = initalShape.b3 + move[1]
+        shape.b4 = initalShape.b4 + move[1]
+    }
+    else if (shape.type === "triangle")
+    {
+        shape.a1 = initalShape.a1 + move[0]
+        shape.a2 = initalShape.a2 + move[0]
+        shape.a3 = initalShape.a3 + move[0]
+        shape.b1 = initalShape.b1 + move[1]
+        shape.b2 = initalShape.b2 + move[1]
+        shape.b3 = initalShape.b3 + move[1]
+    }
+    else
+    {
+        shape.centerX = initalShape.centerX + move[0];
+        shape.centerY = initalShape.centerY + move[1];
+    }
+}
+
+function rotateShape() {
+
 }
 
 function drawShapePreview() {
@@ -440,6 +571,36 @@ function drawImagePreview() {
     ctx.globalCompositeOperation = 'source-over'
     ctx.beginPath();
     ctx.rect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0] - shapeTopLeft[0], mousePos[1] - shapeTopLeft[1]);
+    ctx.stroke();
+}
+
+function drawSelectionPreview() {
+    redraw();
+    const shape = allPaths[selectedShapeIndex];
+    ctx.lineWidth = imagePreviewLineWidth;
+    ctx.strokeStyle = imagePreviewLineColour;
+    ctx.globalAlpha = imagePreviewLineAlpha;
+    ctx.globalCompositeOperation = 'source-over';
+    let topLeft = [0, 0]
+    let bottomRight = [0, 0]
+    ctx.beginPath();
+    if (shape.type === "rect") {
+        topLeft = [Math.min(shape.a1, shape.a2, shape.a3, shape.a4), Math.min(shape.b1, shape.b2, shape.b3, shape.b4)];
+        bottomRight = [Math.max(shape.a1, shape.a2, shape.a3, shape.a4), Math.max(shape.b1, shape.b2, shape.b3, shape.b4)];
+    }
+    else if (shape.type === "triangle") {
+        topLeft = [Math.min(shape.a1, shape.a2, shape.a3), Math.min(shape.b1, shape.b2, shape.b3)];
+        bottomRight = [Math.max(shape.a1, shape.a2, shape.a3), Math.max(shape.b1, shape.b2, shape.b3)];
+    }
+    else {
+        topLeft = [shape.centerX - shape.radius, shape.centerY - shape.radius];
+        bottomRight = [shape.centerX + shape.radius, shape.centerY + shape.radius];
+    }
+    topLeft[0] -= 30;
+    topLeft[1] -= 30;
+    bottomRight[0] += 30;
+    bottomRight[1] += 30;
+    ctx.rect(topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]);
     ctx.stroke();
 }
 
@@ -492,8 +653,10 @@ function selectBrush(index, button) {
     clearToggles();
     clearSpecialToggles();
     selectMode = false;
-    textBoxMode = false
+    shapeSelected = false;
+    textBoxMode = false;
     imageMode = false;
+    shapeMode = false;
     button.classList.toggle("toggled");
     saveState();
 }
@@ -533,7 +696,7 @@ function mouseDown(event) {
     }
     if (textBoxMode) {
         shapeTopLeft = [mousePos[0], mousePos[1]];
-        drawingText = true; 
+        drawingText = true;
         return;
     }
     if (shapeMode) {
@@ -552,8 +715,18 @@ function mouseDown(event) {
 
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
-
-        if (item.type === 'text') {
+        if (item.type === "rect" || item.type === "triangle" || item.type === "circle") {
+            selectedShapeIndex = i;
+            if (!mouseInteriorCheck())
+            {
+                continue;
+            }
+            initalShape = structuredClone(item);
+            shapeSelectInitialMousePos = mousePos;
+            shapeSelected = true;
+            return;
+        }
+        else if (item.type === 'text') {
             ctx.font = `${item.size}px Arial`;
             const textWidth = ctx.measureText(item.text).width;
             const textHeight = item.size;
@@ -604,6 +777,12 @@ function mouseUp(event) {
         insertText(mousePos[0], mousePos[1]);
         resetStrokeSettings();
         drawingText = false;
+    }
+    else if (selectMode){
+        if (shapeSelected) {
+            shapeSelected = false;
+            saveState()
+        }
     }
     else {
         endPath();
@@ -687,6 +866,15 @@ function undo() {
 
 function update() {
     updateCurrentPath();
+    if (shapeSelected) {
+        drawSelectionPreview();
+        if (pressedKeys["r"] === true) {
+            rotateShape();
+        }
+        else {
+            moveShape();
+        }
+    }
     if (drawingShape) {
         drawShapePreview();
     }
