@@ -600,6 +600,7 @@ function mouseUp(event) {
     else {
         endPath();
     }
+    redraw();
 }
 
 function startPath() {
