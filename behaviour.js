@@ -7,6 +7,7 @@ ctx.lineJoin = "round";
 let eraserMode = false
 let penDown = false
 let allPaths = []
+let redoPaths = [];
 let currentPath
 let mousePos = [0, 0]
 let lastMousePos = [0, 0]
@@ -33,7 +34,7 @@ let shapeSelectInitialMousePos = [0, 0];
 let initalShape = null;
 
 const imagePreviewLineWidth = 10;
-const imagePreviewLineColour = "rgb(0, 0, 0)";
+const imagePreviewLineColour = "rgb(106, 106, 106)";
 const imagePreviewLineAlpha = 1;
 
 
@@ -282,6 +283,7 @@ function insertImage(mouseX, mouseY) {
                 composite: ctx.globalCompositeOperation
             });
 
+            redoPaths = [];
             redraw();
             saveState();
         };
@@ -314,6 +316,7 @@ function insertText(mouseX, mouseY) {
             composite: 'source-over'
         });
 
+        redoPaths = [];
         redraw();
         saveState();
     }
@@ -335,6 +338,8 @@ function insertRect(x1, y1, x2, y2) {
         alpha: ctx.globalAlpha,
         composite: ctx.globalCompositeOperation
     });
+
+    redoPaths = [];
     redraw();
     saveState();
 }
@@ -353,6 +358,8 @@ function insertCircle(x1, y1, x2, y2) {
         alpha: ctx.globalAlpha,
         composite: ctx.globalCompositeOperation
     });
+
+    redoPaths = [];
     redraw();
     saveState();
 
@@ -372,6 +379,8 @@ function insertTriangle(x1, y1, x2, y2) {
         alpha: ctx.globalAlpha,
         composite: ctx.globalCompositeOperation
     });
+
+    redoPaths = [];
     redraw();
     saveState();
 }
@@ -740,7 +749,11 @@ function keyDown(event) {
         console.log(ctx.globalAlpha);
         console.log(opacitySlider.value);
     }
-    if (pressedKeys["Control"] === true && pressedKeys["z"] === true) {
+    if (pressedKeys["Control"] === true && pressedKeys["y"] === true)
+    {
+        redo();
+    }
+    else if (pressedKeys["Control"] === true && pressedKeys["z"] === true) {
         undo();
     }
 }
@@ -901,7 +914,7 @@ function endPath() {
         composite: ctx.globalCompositeOperation
     });
     penDown = false;
-
+    redoPaths = [];
     saveState();
 }
 
@@ -919,9 +932,19 @@ function draw() {
 
 
 function undo() {
-    allPaths.pop();
-    redraw();
-    saveState();
+    if (allPaths.length > 0) {
+        redoPaths.push(allPaths.pop());
+        redraw();
+        saveState();
+    }
+}
+
+function redo() {
+    if (redoPaths.length > 0) {
+        allPaths.push(redoPaths.pop());
+        redraw();
+        saveState();
+    }
 }
 
 function update() {
