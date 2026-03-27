@@ -694,9 +694,13 @@ function updateOpacity(event) {
 
 function setMousePos(event) {
     const canvasRect = canvas.getBoundingClientRect();
-    lastMousePos = [mousePos[0], mousePos[1]]
-    mouseX = event.clientX - canvasRect.left;
-    mouseY = event.clientY - canvasRect.top;
+    lastMousePos = [mousePos[0], mousePos[1]];
+
+    const scaleX = canvas.width / canvasRect.width;
+    const scaleY = canvas.height / canvasRect.height;
+
+    let mouseX = (event.clientX - canvasRect.left) * scaleX;
+    let mouseY = (event.clientY - canvasRect.top) * scaleY;
     mousePos = [mouseX, mouseY];
     update();
 }
@@ -784,8 +788,11 @@ function mouseDown(event) {
     }
 
     const canvasRect = canvas.getBoundingClientRect();
-    const clickX = event.clientX - canvasRect.left;
-    const clickY = event.clientY - canvasRect.top;
+    const scaleX = canvas.width / canvasRect.width;
+    const scaleY = canvas.height / canvasRect.height;
+    
+    const clickX = (event.clientX - canvasRect.left) * scaleX;
+    const clickY = (event.clientY - canvasRect.top) * scaleY;
 
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
