@@ -75,7 +75,7 @@ function toggleSelectMode() {
         }
         return
     }
-    else{
+    else {
         shapeMode = false;
         textBoxMode = false;
         imageMode = false;
@@ -102,7 +102,7 @@ function toggleTextBoxMode() {
         }
         return
     }
-    else{
+    else {
         selectMode = false;
         shapeSelected = false;
         shapeMode = false;
@@ -148,7 +148,7 @@ function toggleShapeMode(shape, button) {
     clearShapeToggles();
 
     selectMode = false;
-    shapeSelected = false; 
+    shapeSelected = false;
     textBoxMode = false;
     imageMode = false;
 
@@ -471,29 +471,26 @@ function pointInPolygon(vertices) {
         }
     }
 
-    return true; 
+    return true;
 }
-function mouseInteriorCheck(){
+function mouseInteriorCheck() {
     const shape = allPaths[selectedShapeIndex];
-    if (shape.type === "rect")
-    {
-        const v1 = [shape.a1, shape. b1];
-        const v2 = [shape.a2, shape. b2];
-        const v3 = [shape.a3, shape. b3];
-        const v4 = [shape.a4, shape. b4];
-        
+    if (shape.type === "rect") {
+        const v1 = [shape.a1, shape.b1];
+        const v2 = [shape.a2, shape.b2];
+        const v3 = [shape.a3, shape.b3];
+        const v4 = [shape.a4, shape.b4];
+
         return pointInPolygon([v1, v2, v3, v4])
     }
-    else if (shape.type === "triangle")
-    {
-        const v1 = [shape.a1, shape. b1];
-        const v2 = [shape.a2, shape. b2];
-        const v3 = [shape.a3, shape. b3];
-        
+    else if (shape.type === "triangle") {
+        const v1 = [shape.a1, shape.b1];
+        const v2 = [shape.a2, shape.b2];
+        const v3 = [shape.a3, shape.b3];
+
         return pointInPolygon([v1, v2, v3])
     }
-    else
-    {
+    else {
         let mouseDistance = 0;
         mouseDistance += (mousePos[0] - shape.centerX) ** 2;
         mouseDistance += (mousePos[1] - shape.centerY) ** 2;
@@ -507,8 +504,7 @@ function moveShape() {
     let move = [0, 0]
     move[0] = mousePos[0] - shapeSelectInitialMousePos[0];
     move[1] = mousePos[1] - shapeSelectInitialMousePos[1];
-    if (shape.type === "rect")
-    {
+    if (shape.type === "rect") {
         shape.a1 = initalShape.a1 + move[0]
         shape.a2 = initalShape.a2 + move[0]
         shape.a3 = initalShape.a3 + move[0]
@@ -518,8 +514,7 @@ function moveShape() {
         shape.b3 = initalShape.b3 + move[1]
         shape.b4 = initalShape.b4 + move[1]
     }
-    else if (shape.type === "triangle")
-    {
+    else if (shape.type === "triangle") {
         shape.a1 = initalShape.a1 + move[0]
         shape.a2 = initalShape.a2 + move[0]
         shape.a3 = initalShape.a3 + move[0]
@@ -527,15 +522,81 @@ function moveShape() {
         shape.b2 = initalShape.b2 + move[1]
         shape.b3 = initalShape.b3 + move[1]
     }
-    else
-    {
+    else {
         shape.centerX = initalShape.centerX + move[0];
         shape.centerY = initalShape.centerY + move[1];
     }
 }
 
-function rotateShape() {
+function rotatePoint(x, y, cx, cy, cosTheta, sinTheta) {
+    const dx = x - cx;
+    const dy = y - cy;
+    return [
+        dx * cosTheta - dy * sinTheta + cx,
+        dx * sinTheta + dy * cosTheta + cy
+    ];
+}
 
+function rotateShape() {
+    const shape = allPaths[selectedShapeIndex];
+
+    let cx, cy;
+    let points = [];
+
+    if (shape.type === "rect") {
+        cx = (initalShape.a1 + initalShape.a2 + initalShape.a3 + initalShape.a4) / 4;
+        cy = (initalShape.b1 + initalShape.b2 + initalShape.b3 + initalShape.b4) / 4;
+        points = [
+            [initalShape.a1, initalShape.b1],
+            [initalShape.a2, initalShape.b2],
+            [initalShape.a3, initalShape.b3],
+            [initalShape.a4, initalShape.b4]
+        ];
+    } else if (shape.type === "triangle") {
+        cx = (initalShape.a1 + initalShape.a2 + initalShape.a3) / 3;
+        cy = (initalShape.b1 + initalShape.b2 + initalShape.b3) / 3;
+        points = [
+            [initalShape.a1, initalShape.b1],
+            [initalShape.a2, initalShape.b2],
+            [initalShape.a3, initalShape.b3]
+        ];
+    } else {
+        return;
+    }
+
+    const startAngle = Math.atan2(shapeSelectInitialMousePos[1] - cy, shapeSelectInitialMousePos[0] - cx);
+    const currentAngle = Math.atan2(mousePos[1] - cy, mousePos[0] - cx);
+    const theta = currentAngle - startAngle;
+
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+
+    if (shape.type === "rect") {
+        const p1 = rotatePoint(points[0][0], points[0][1], cx, cy, cosTheta, sinTheta);
+        const p2 = rotatePoint(points[1][0], points[1][1], cx, cy, cosTheta, sinTheta);
+        const p3 = rotatePoint(points[2][0], points[2][1], cx, cy, cosTheta, sinTheta);
+        const p4 = rotatePoint(points[3][0], points[3][1], cx, cy, cosTheta, sinTheta);
+
+        shape.a1 = p1[0];
+        shape.a2 = p2[0];
+        shape.a3 = p3[0];
+        shape.a4 = p4[0];
+        shape.b1 = p1[1];
+        shape.b2 = p2[1];
+        shape.b3 = p3[1];
+        shape.b4 = p4[1];
+    } else if (shape.type === "triangle") {
+        const p1 = rotatePoint(points[0][0], points[0][1], cx, cy, cosTheta, sinTheta);
+        const p2 = rotatePoint(points[1][0], points[1][1], cx, cy, cosTheta, sinTheta);
+        const p3 = rotatePoint(points[2][0], points[2][1], cx, cy, cosTheta, sinTheta);
+
+        shape.a1 = p1[0];
+        shape.a2 = p2[0];
+        shape.a3 = p3[0];
+        shape.b1 = p1[1];
+        shape.b2 = p2[1];
+        shape.b3 = p3[1];
+    }
 }
 
 function drawShapePreview() {
@@ -717,8 +778,7 @@ function mouseDown(event) {
         const item = allPaths[i];
         if (item.type === "rect" || item.type === "triangle" || item.type === "circle") {
             selectedShapeIndex = i;
-            if (!mouseInteriorCheck())
-            {
+            if (!mouseInteriorCheck()) {
                 continue;
             }
             initalShape = structuredClone(item);
@@ -778,7 +838,7 @@ function mouseUp(event) {
         resetStrokeSettings();
         drawingText = false;
     }
-    else if (selectMode){
+    else if (selectMode) {
         if (shapeSelected) {
             shapeSelected = false;
             saveState()
