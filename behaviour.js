@@ -252,6 +252,17 @@ function loadState() {
     }
 }
 
+function clearCanvas() {
+    allPaths.push(
+        {
+            type: 'clear'
+        }
+    )
+    redoPaths = [];
+    redraw();
+    saveState();
+}
+
 function insertImage(mouseX, mouseY) {
     const url = prompt("Enter the image URL:");
     if (url) {
@@ -397,7 +408,10 @@ function redraw() {
     for (let i = 0; i < allPaths.length; i++) {
         const item = allPaths[i];
 
-        if (item.type === 'image') {
+        if (item.type === 'clear') {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        else if (item.type === 'image') {
             ctx.globalAlpha = item.alpha;
             ctx.globalCompositeOperation = item.composite;
             ctx.drawImage(item.data, item.x, item.y, item.w, item.h);
@@ -1022,4 +1036,7 @@ circleButton.addEventListener("click", circleMode);
 
 const triangleButton = document.getElementById("triangleButton");
 triangleButton.addEventListener("click", triangleMode);
+
+const clearButton = document.getElementById("clearButton");
+clearButton.addEventListener("click", clearCanvas);
 loadState();
