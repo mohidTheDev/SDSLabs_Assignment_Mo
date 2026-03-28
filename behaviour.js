@@ -706,15 +706,33 @@ function updateOpacity(event) {
 
 /* INPUT CHECKS */
 
+function getEventCoordinates(event) {
+    if (event.touches && event.touches.length > 0) {
+        return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } 
+
+    else if (event.changedTouches && event.changedTouches.length > 0) {
+        return { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+    }
+
+    return { x: event.clientX, y: event.clientY };
+}
+
 function setMousePos(event) {
+    if (event.cancelable && event.type.includes('touch')) {
+        event.preventDefault();
+    }
+
     const canvasRect = canvas.getBoundingClientRect();
     lastMousePos = [mousePos[0], mousePos[1]];
 
     const scaleX = canvas.width / canvasRect.width;
     const scaleY = canvas.height / canvasRect.height;
 
-    let mouseX = (event.clientX - canvasRect.left) * scaleX;
-    let mouseY = (event.clientY - canvasRect.top) * scaleY;
+    const coords = getEventCoordinates(event);
+
+    let mouseX = (coords.x - canvasRect.left) * scaleX;
+    let mouseY = (coords.y - canvasRect.top) * scaleY;
     mousePos = [mouseX, mouseY];
     update();
 }
@@ -801,12 +819,10 @@ function mouseDown(event) {
         return;
     }
 
-    const canvasRect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / canvasRect.width;
-    const scaleY = canvas.height / canvasRect.height;
+    setMousePos(event); 
     
-    const clickX = (event.clientX - canvasRect.left) * scaleX;
-    const clickY = (event.clientY - canvasRect.top) * scaleY;
+    const clickX = mousePos[0];
+    const clickY = mousePos[1];
 
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
@@ -1039,4 +1055,24 @@ triangleButton.addEventListener("click", triangleMode);
 
 const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", clearCanvas);
+
+canvas.addEventListener('mousemove', setMousePos);
+canvas.addEventListener('mousedown', mouseDown);
+canvas.addEventListener('mouseup', mouseUp);
+
+canvas.addEventListener('touchmove', setMousePos, { passive: false }); 
+
+function touchStart(event) {
+    setMousePos(event);
+    mouseDown(event);
+}
+
+function touchEnd(event) {
+    event.preventDefault();
+    mouseUp(event);
+}
+
+canvas.addEventListener('touchstart', touchStart, { passive: false });
+canvas.addEventListener('touchend', touchEnd);
+
 loadState();
