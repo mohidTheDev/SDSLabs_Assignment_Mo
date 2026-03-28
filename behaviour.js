@@ -879,12 +879,18 @@ function mouseUp(event) {
         return;
     }
     else if (imageMode) {
-        insertImage(mousePos[0], mousePos[1]);
+        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5)
+        {
+            insertImage(mousePos[0], mousePos[1]);
+        }
         resetStrokeSettings();
         drawingImage = false;
     }
     else if (textBoxMode) {
-        insertText(mousePos[0], mousePos[1]);
+        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5)
+        {
+            insertText(mousePos[0], mousePos[1]);
+        }
         resetStrokeSettings();
         drawingText = false;
     }
