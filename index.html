@@ -61,7 +61,7 @@
             <canvas id="canvas" width="1000" height="500"></canvas>
         </main>
 
-        <footer class="bottomControls">
+        <div class="bottomControls">
             <div class="bottomLeft">
                 <button class="iconButton" id="modeButton">
                     <img src="Icons/Light/mode.png">
@@ -69,9 +69,9 @@
             </div>
             <div class="bottomCenter">
                 <span id="statusText">Tip: Hold 'R' on a selected shape to rotate.<br>
-                Ctrl + Z : Undo <br>
-                Ctrl + Y : Redo
-            </span>
+                    Ctrl + Z : Undo <br>
+                    Ctrl + Y : Redo
+                </span>
             </div>
 
             <div class="bottomRight">
@@ -88,10 +88,15 @@
                     <img src="Icons/Light/linkimage.png">
                 </button>
             </div>
-        </footer>
-
-    </div>
-    <script src="behaviour.js"></script>
+        </div>
+        <div class="toolTips">
+            <div class="bottomCenter">
+                <span>The eraser can be selected / deselected with each of the brush / shape tools to define whether a stroke is drawn or erased.
+                    <br>For drawing text boxes or inserting images, first click and drag to define the area where it has to be inserted.
+                </span>
+            </div>
+        </div>
+        <script src="behaviour.js"></script>
 </body>
 
 </html>
