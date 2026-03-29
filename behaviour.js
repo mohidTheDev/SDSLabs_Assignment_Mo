@@ -708,7 +708,7 @@ function updateOpacity(event) {
 function getEventCoordinates(event) {
     if (event.touches && event.touches.length > 0) {
         return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    } 
+    }
 
     else if (event.changedTouches && event.changedTouches.length > 0) {
         return { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
@@ -718,20 +718,14 @@ function getEventCoordinates(event) {
 }
 
 function setMousePos(event) {
-    if (event.cancelable && event.type.includes('touch')) {
-        event.preventDefault();
-    }
-
     const canvasRect = canvas.getBoundingClientRect();
     lastMousePos = [mousePos[0], mousePos[1]];
 
     const scaleX = canvas.width / canvasRect.width;
     const scaleY = canvas.height / canvasRect.height;
 
-    const coords = getEventCoordinates(event);
-
-    let mouseX = (coords.x - canvasRect.left) * scaleX;
-    let mouseY = (coords.y - canvasRect.top) * scaleY;
+    let mouseX = (event.clientX - canvasRect.left) * scaleX;
+    let mouseY = (event.clientY - canvasRect.top) * scaleY;
     mousePos = [mouseX, mouseY];
     update();
 }
@@ -783,8 +777,7 @@ function keyDown(event) {
         console.log(ctx.globalAlpha);
         console.log(opacitySlider.value);
     }
-    if (pressedKeys["Control"] === true && pressedKeys["y"] === true)
-    {
+    if (pressedKeys["Control"] === true && pressedKeys["y"] === true) {
         redo();
     }
     else if (pressedKeys["Control"] === true && pressedKeys["z"] === true) {
@@ -797,6 +790,10 @@ function keyUp(event) {
 
 function mouseDown(event) {
     console.log("Element clicked:", event.target);
+    canvas.setPointerCapture(event.pointerId);
+
+    setMousePos(event);
+
     if (imageMode) {
         shapeTopLeft = [mousePos[0], mousePos[1]];
         drawingImage = true;
@@ -816,9 +813,6 @@ function mouseDown(event) {
         startPath();
         return;
     }
-
-    setMousePos(event); 
-    
     const clickX = mousePos[0];
     const clickY = mousePos[1];
 
@@ -861,6 +855,7 @@ function mouseDown(event) {
 }
 
 function mouseUp(event) {
+    canvas.releasePointerCapture(event.pointerId);
     if (shapeMode) {
         if (currentShape === "rect") {
             insertRect(shapeTopLeft[0], shapeTopLeft[1], mousePos[0], mousePos[1]);
@@ -877,16 +872,14 @@ function mouseUp(event) {
         return;
     }
     else if (imageMode) {
-        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5)
-        {
+        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5) {
             insertImage(mousePos[0], mousePos[1]);
         }
         resetStrokeSettings();
         drawingImage = false;
     }
     else if (textBoxMode) {
-        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5)
-        {
+        if (mousePos[0] - shapeTopLeft[0] > 5 && mousePos[1] - shapeTopLeft[1] > 5) {
             insertText(mousePos[0], mousePos[1]);
         }
         resetStrokeSettings();
@@ -1060,23 +1053,12 @@ triangleButton.addEventListener("click", triangleMode);
 const clearButton = document.getElementById("clearButton");
 clearButton.addEventListener("click", clearCanvas);
 
-canvas.addEventListener('mousemove', setMousePos);
-canvas.addEventListener('mousedown', mouseDown);
-canvas.addEventListener('mouseup', mouseUp);
+canvas.style.touchAction = "none";
 
-canvas.addEventListener('touchmove', setMousePos, { passive: false }); 
+canvas.addEventListener('pointermove', setMousePos);
+canvas.addEventListener('pointerdown', mouseDown);
+canvas.addEventListener('pointerup', mouseUp);
 
-function touchStart(event) {
-    setMousePos(event);
-    mouseDown(event);
-}
-
-function touchEnd(event) {
-    event.preventDefault();
-    mouseUp(event);
-}
-
-canvas.addEventListener('touchstart', touchStart, { passive: false });
-canvas.addEventListener('touchend', touchEnd);
+canvas.addEventListener('pointercancel', mouseUp);
 
 loadState();
