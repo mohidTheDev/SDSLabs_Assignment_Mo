@@ -710,7 +710,6 @@ function updateBrushSize(event) {
 }
 
 function updateColour(event) {
-    console.log(event.target.value);
     ctx.strokeStyle = event.target.value;
     saveState();
 }
@@ -786,14 +785,6 @@ function brushButtonPressed() {
 
 function keyDown(event) {
     pressedKeys[event.key] = true
-    if (event.key === "e") {
-        toggleEraserMode();
-    }
-    if (event.key === "p") {
-        console.log(allPaths)
-        console.log(ctx.globalAlpha);
-        console.log(opacitySlider.value);
-    }
     if (pressedKeys["Control"] === true && pressedKeys["y"] === true) {
         redo();
     }
@@ -806,7 +797,6 @@ function keyUp(event) {
 }
 
 function mouseDown(event) {
-    console.log("Element clicked:", event.target);
     canvas.setPointerCapture(event.pointerId);
 
     setMousePos(event);
