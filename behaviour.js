@@ -36,6 +36,7 @@ const imagePreviewLineWidth = 10;
 const imagePreviewLineColour = "rgb(106, 106, 106)";
 const imagePreviewLineAlpha = 1;
 
+const canvasContainer = document.querySelector('.canvasArea');
 
 function resetStrokeSettings() {
     ctx.lineWidth = sizeSlider.value;
@@ -188,6 +189,22 @@ function toggleMode() {
         }
     }
     saveState();
+}
+
+function resizeCanvas() {
+    const newWidth = canvas.clientWidth;
+    const newHeight = canvas.clientHeight;
+
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        resetStrokeSettings();
+
+        redraw();
+    }
 }
 
 function saveState() {
@@ -1060,5 +1077,9 @@ canvas.addEventListener('pointerdown', mouseDown);
 canvas.addEventListener('pointerup', mouseUp);
 
 canvas.addEventListener('pointercancel', mouseUp);
+
+resizeCanvas();
+
+window.addEventListener('resize', resizeCanvas);
 
 loadState();
