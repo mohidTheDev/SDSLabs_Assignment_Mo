@@ -28,7 +28,6 @@ let drawingImage = false;
 let drawingText = false;
 
 let shapeSelected = false;
-let selectedShapeIndex = -1;
 let rotatingSelected = false; // not rotating => moving
 let shapeSelectInitialMousePos = [0, 0];
 let initalShape = null;
@@ -496,8 +495,8 @@ function pointInPolygon(vertices) {
 
     return true;
 }
-function mouseInteriorCheck() {
-    const shape = allPaths[selectedShapeIndex];
+function mouseInteriorCheck(shapeIndex) {
+    const shape = allPaths[shapeIndex];
     if (shape.type === "rect") {
         const v1 = [shape.a1, shape.b1];
         const v2 = [shape.a2, shape.b2];
@@ -523,7 +522,7 @@ function mouseInteriorCheck() {
 }
 
 function moveShape() {
-    const shape = allPaths[selectedShapeIndex];
+    const shape = allPaths[allPaths.length - 1];
     let move = [0, 0]
     move[0] = mousePos[0] - shapeSelectInitialMousePos[0];
     move[1] = mousePos[1] - shapeSelectInitialMousePos[1];
@@ -561,7 +560,7 @@ function rotatePoint(x, y, cx, cy, cosTheta, sinTheta) {
 }
 
 function rotateShape() {
-    const shape = allPaths[selectedShapeIndex];
+    const shape = allPaths[allPaths.length - 1];
 
     let cx, cy;
     let points = [];
@@ -660,7 +659,7 @@ function drawImagePreview() {
 
 function drawSelectionPreview() {
     redraw();
-    const shape = allPaths[selectedShapeIndex];
+    const shape = allPaths[allPaths.length - 1];
     ctx.lineWidth = imagePreviewLineWidth;
     ctx.strokeStyle = imagePreviewLineColour;
     ctx.globalAlpha = imagePreviewLineAlpha;
@@ -827,10 +826,10 @@ function mouseDown(event) {
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
         if (item.type === "rect" || item.type === "triangle" || item.type === "circle") {
-            selectedShapeIndex = i;
-            if (!mouseInteriorCheck()) {
+            if (!mouseInteriorCheck(i)) {
                 continue;
             }
+            allPaths.push(allPaths.splice(i, 1)[0]);
             initalShape = structuredClone(item);
             shapeSelectInitialMousePos = mousePos;
             shapeSelected = true;
