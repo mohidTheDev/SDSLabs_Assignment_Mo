@@ -761,7 +761,6 @@ function selectBrush(index, button) {
     shapeSelected = false;
     textBoxMode = false;
     imageMode = false;
-    shapeMode = false;
     button.classList.toggle("toggled");
     saveState();
 }
