@@ -822,7 +822,9 @@ function mouseDown(event) {
     }
     const clickX = mousePos[0];
     const clickY = mousePos[1];
-
+    if (allPaths[allPaths.length - 1].type === "clear"){
+        return;
+    }
     for (let i = allPaths.length - 1; i >= 0; i--) {
         const item = allPaths[i];
         if (item.type === "rect" || item.type === "triangle" || item.type === "circle") {
